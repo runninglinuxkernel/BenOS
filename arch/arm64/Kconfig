@@ -1,0 +1,10 @@
+config ARM64
+	def_bool y
+	help
+	  ARM 64-bit (AArch64) support.
+
+config 64BIT
+	def_bool y
+
+#source "kernel/Kconfig"
+source "init/Kconfig"
