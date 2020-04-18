@@ -85,3 +85,17 @@ define archhelp
   echo  '                  (distribution) /sbin/installkernel or'
   echo  '                  install to $$(INSTALL_PATH) and run lilo'
 endef
+
+QEMU_FLAGS  = -machine raspi3 -nographic
+
+ifeq ($(CONFIG_PI_MINI_UART),y)
+QEMU_FLAGS  += -serial null -serial mon:stdio
+endif
+
+run:
+	qemu-system-aarch64 $(QEMU_FLAGS) \
+	-kernel arch/arm64/boot/benos.bin
+
+debug:
+	qemu-system-aarch64 $(QEMU_FLAGS) \
+	-kernel arch/arm64/boot/benos.bin -S -s
