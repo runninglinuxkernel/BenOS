@@ -86,11 +86,19 @@ define archhelp
   echo  '                  install to $$(INSTALL_PATH) and run lilo'
 endef
 
-QEMU_FLAGS  = -machine raspi3 -nographic
+ifeq ($(CONFIG_BOARD_PI3B), y)
+QEMU_FLAGS  += -machine raspi3
+endif
+
+ifeq ($(CONFIG_BOARD_PI4B), y)
+QEMU_FLAGS  += -machine raspi4
+endif
 
 ifeq ($(CONFIG_PI_MINI_UART),y)
 QEMU_FLAGS  += -serial null -serial mon:stdio
 endif
+
+QEMU_FLAGS  += -nographic
 
 run:
 	qemu-system-aarch64 $(QEMU_FLAGS) \
