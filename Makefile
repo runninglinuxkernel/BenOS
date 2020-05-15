@@ -513,7 +513,7 @@ drivers-y	:= $(patsubst %/, %/built-in.lib, $(drivers-y))
 benos-init := $(head-y) $(init-y)
 benos-main := $(core-y) $(libs-y) $(drivers-y)
 benos-all  := $(benos-init) $(benos-main)
-benos-lds  := arch/$(ARCH)/kernel/vmlinux.lds
+benos-lds  := arch/$(ARCH)/kernel/benos.lds
 benos-map  := benos.map
 export KBUILD_VMLINUX_OBJS := $(benos-all)
 

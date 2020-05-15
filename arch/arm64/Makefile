@@ -1,16 +1,8 @@
 #
 # arch/arm64/Makefile
 #
-# This file is included by the global makefile so that you can add your own
-# architecture-specific flags and dependencies.
-#
-# This file is subject to the terms and conditions of the GNU General Public
-# License.  See the file "COPYING" in the main directory of this archive
-# for more details.
-#
-# Copyright (C) 1995-2001 by Russell King
 
-LDFLAGS_benso	:=-p --no-undefined -X
+LDFLAGS_benos	:=-p --no-undefined -X
 #CPPFLAGS_vmlinux.lds = -DTEXT_OFFSET=$(TEXT_OFFSET)
 OBJCOPYFLAGS	:=-O binary -R .note -R .note.gnu.build-id -R .comment -S
 GZFLAGS		:=-9
@@ -34,12 +26,13 @@ CHECKFLAGS	+= -D__aarch64__
 head-y		:= arch/arm64/kernel/head.o
 
 # The byte offset of the kernel image in RAM from the start of RAM.
-TEXT_OFFSET := 0x00080000
+#TEXT_OFFSET := 0x00080000
 
 export	TEXT_OFFSET GZFLAGS
 
 core-y		+= arch/arm64/kernel/
 
+## add mach-rpi folder
 ifeq ($(CONFIG_ARCH_BCM2835),y)
 machine-$(CONFIG_ARCH_BCM2835)      := rpi
 incdir-$(CONFIG_ARCH_BCM2835)	:= rpi
@@ -54,16 +47,14 @@ ifneq ($(machine-y),)
 MACHINE  := arch/arm64/mach-$(machine-y)/
 endif
 
-# LDFLAGS_benos +=-L $(MACHINE)
 machdirs := $(patsubst %,arch/arm/mach-%/,$(machine-y))
 
 core-y  += $(MACHINE)
 
 # Default target when executing plain make
 KBUILD_IMAGE	:= benos.bin
-#KBUILD_DTBS	:= dtbs
 
-all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
+all:	$(KBUILD_IMAGE)
 
 boot := arch/arm64/boot
 
@@ -72,28 +63,12 @@ include/mach:
 	@$(SYMLINK) $(TOPDIR)/arch/arm64/$(INCDIR)/mach $@
 
 benos.bin: benos
-	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
-
-zinstall install: benos
-	$(Q)$(MAKE) $(build)=$(boot) $@
-
-%.dtb: scripts
-	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
+	@$(MAKE) $(build)=$(boot) $(boot)/$@
 
 archprepare: maketools
 
-PHONY += dtbs dtbs_install maketools
+PHONY += maketools
 maketools : include/mach
-
-dtbs: prepare scripts
-	$(Q)$(MAKE) $(build)=$(boot)/dts
-
-dtbs_install:
-	$(Q)$(MAKE) $(dtbinst)=$(boot)/dts
-
-PHONY += vdso_install
-vdso_install:
-	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso $@
 
 CLEAN_FILES += arch/$(ARCH)/boot/benos.bin
 CLEAN_FILES += include/mach
@@ -105,10 +80,6 @@ archclean:
 define archhelp
   echo  '* Image.gz      - Compressed kernel image (arch/$(ARCH)/boot/Image.gz)'
   echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'
-  echo  '* dtbs          - Build device tree blobs for enabled boards'
-  echo  '  dtbs_install  - Install dtbs to $(INSTALL_DTBS_PATH)'
-  echo  '  install       - Install uncompressed kernel'
-  echo  '  zinstall      - Install compressed kernel'
   echo  '                  Install using (your) ~/bin/installkernel or'
   echo  '                  (distribution) /sbin/installkernel or'
   echo  '                  install to $$(INSTALL_PATH) and run lilo'
