@@ -40,6 +40,25 @@ export	TEXT_OFFSET GZFLAGS
 
 core-y		+= arch/arm64/kernel/
 
+ifeq ($(CONFIG_ARCH_BCM2835),y)
+machine-$(CONFIG_ARCH_BCM2835)      := rpi
+incdir-$(CONFIG_ARCH_BCM2835)	:= rpi
+endif
+
+ifeq ($(incdir-y),)
+incdir-y := $(machine-y)
+endif
+INCDIR   := mach-$(incdir-y)
+
+ifneq ($(machine-y),)
+MACHINE  := arch/arm64/mach-$(machine-y)/
+endif
+
+# LDFLAGS_benos +=-L $(MACHINE)
+machdirs := $(patsubst %,arch/arm/mach-%/,$(machine-y))
+
+core-y  += $(MACHINE)
+
 # Default target when executing plain make
 KBUILD_IMAGE	:= benos.bin
 #KBUILD_DTBS	:= dtbs
@@ -47,6 +66,10 @@ KBUILD_IMAGE	:= benos.bin
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm64/boot
+
+include/mach:
+	@echo '  SYMLINK include/asm/mach -> arch/arm64/$(INCDIR)/mach'
+	@$(SYMLINK) $(TOPDIR)/arch/arm64/$(INCDIR)/mach $@
 
 benos.bin: benos
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
@@ -57,7 +80,10 @@ zinstall install: benos
 %.dtb: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
 
-PHONY += dtbs dtbs_install
+archprepare: maketools
+
+PHONY += dtbs dtbs_install maketools
+maketools : include/mach
 
 dtbs: prepare scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts
@@ -69,10 +95,12 @@ PHONY += vdso_install
 vdso_install:
 	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso $@
 
+CLEAN_FILES += arch/$(ARCH)/boot/benos.bin
+CLEAN_FILES += include/mach
+
 # We use MRPROPER_FILES and CLEAN_FILES now
 archclean:
 	$(Q)$(MAKE) $(clean)=$(boot)
-	#$(Q)$(MAKE) $(clean)=$(boot)/dts
 
 define archhelp
   echo  '* Image.gz      - Compressed kernel image (arch/$(ARCH)/boot/Image.gz)'

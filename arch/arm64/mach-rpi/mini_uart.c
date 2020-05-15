@@ -1,5 +1,5 @@
-#include <asm/peripherals/mini_uart.h>
-#include <asm/peripherals/gpio.h>
+#include <mach/mini_uart.h>
+#include <mach/gpio.h>
 #include <asm/utils.h>
 
 void uart_send(char c) {
