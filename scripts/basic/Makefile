@@ -9,7 +9,7 @@
 # fixdep: 	 Used to generate dependency information during build process
 # docproc:	 Used in Documentation/docbook
 
-hostprogs-y	:= fixdep docproc
+hostprogs-y	:= fixdep
 always		:= $(hostprogs-y)
 
 # fixdep is needed to compile other host programs
