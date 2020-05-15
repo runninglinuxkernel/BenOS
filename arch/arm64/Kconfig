@@ -9,6 +9,8 @@ config 64BIT
 choice
 	prompt"Platform selection"
 	default ARCH_BCM2835
+	help
+	  Platform selection.
 
 config ARCH_BCM2835
 	bool "Broadcom BCM2835 family"
