@@ -1,8 +1,8 @@
 #
-# Makefile for the linux kernel.
+# Makefile for the BenOS
 #
 
-arm64-obj-y		:= mm.o utils.o
+arm64-obj-y		:= mm.o
 
 obj-y					+= $(arm64-obj-y) 
 obj-m					+= $(arm64-obj-m)

@@ -1,53 +1,64 @@
 #include <mach/mini_uart.h>
 #include <mach/gpio.h>
-#include <asm/utils.h>
+#include <asm/io.h>
 
-void uart_send(char c) {
-  while (1) {
-    if (get32(AUX_MU_LSR_REG) & 0x20)
-      break;
-  }
-  put32(AUX_MU_IO_REG, c);
+void uart_send ( char c )
+{
+	while(1) {
+		if(readl(AUX_MU_LSR_REG)&0x20)
+			break;
+	}
+	writel(c, AUX_MU_IO_REG);
 }
 
-char uart_recv(void) {
-  while (1) {
-    if (get32(AUX_MU_LSR_REG) & 0x01)
-      break;
-  }
-  return (get32(AUX_MU_IO_REG) & 0xFF);
+char uart_recv ( void )
+{
+	while(1) {
+		if(readl(AUX_MU_LSR_REG)&0x01)
+			break;
+	}
+	return(readl(AUX_MU_IO_REG)&0xFF);
 }
 
-void uart_send_string(char *str) {
-  for (int i = 0; str[i] != '\0'; i++) {
-    uart_send((char)str[i]);
-  }
+void uart_send_string(char* str)
+{
+	for (int i = 0; str[i] != '\0'; i ++) {
+		uart_send((char)str[i]); }
 }
 
-void uart_init(void) {
-  unsigned int selector;
+void dbg_puts(char *s)
+{
+	while (*s != '\0') {
+		while(!(readl(AUX_MU_LSR_REG) & 0x20))
+			;
+		writel(*s, AUX_MU_IO_REG);
+		s++;
+	}
+}
 
-  selector = get32(GPFSEL1);
-  selector &= ~(7 << 12); // clean gpio14
-  selector |= 2 << 12;    // set alt5 for gpio14
-  selector &= ~(7 << 15); // clean gpio15
-  selector |= 2 << 15;    // set alt5 for gpio15
-  put32(GPFSEL1, selector);
+void uart_init ( void )
+{
+	unsigned int selector;
 
-  put32(GPPUD, 0);
-  delay(150);
-  put32(GPPUDCLK0, (1 << 14) | (1 << 15));
-  delay(150);
-  put32(GPPUDCLK0, 0);
+	selector = readl(GPFSEL1);
+	selector &= ~(7<<12);                   // clean gpio14
+	selector |= 2<<12;                      // set alt5 for gpio14
+	selector &= ~(7<<15);                   // clean gpio15
+	selector |= 2<<15;                      // set alt5 for gpio15
+	writel(selector, GPFSEL1);
 
-  put32(AUX_ENABLES,
-        1); // Enable mini uart (this also enables access to it registers)
-  put32(AUX_MU_CNTL_REG, 0); // Disable auto flow control and disable receiver
-                             // and transmitter (for now)
-  put32(AUX_MU_IER_REG, 0);    // Disable receive and transmit interrupts
-  put32(AUX_MU_LCR_REG, 3);    // Enable 8 bit mode
-  put32(AUX_MU_MCR_REG, 0);    // Set RTS line to be always high
-  put32(AUX_MU_BAUD_REG, 270); // Set baud rate to 115200
+	writel(0, GPPUD);
+	delay(150);
+	writel((1<<14)|(1<<15), GPPUDCLK0);
+	delay(150);
+	writel(0, GPPUDCLK0);
 
-  put32(AUX_MU_CNTL_REG, 3); // Finally, enable transmitter and receiver
+	writel(1, AUX_ENABLES);                   //Enable mini uart (this also enables access to it registers)
+	writel(0, AUX_MU_CNTL_REG);               //Disable auto flow control and disable receiver and transmitter (for now)
+	writel(0, AUX_MU_IER_REG);                //Disable receive and transmit interrupts
+	writel(3, AUX_MU_LCR_REG);                //Enable 8 bit mode
+	writel(0, AUX_MU_MCR_REG);                //Set RTS line to be always high
+	writel(270, AUX_MU_BAUD_REG);             //Set baud rate to 115200
+
+	writel(3, AUX_MU_CNTL_REG);               //Finally, enable transmitter and receiver
 }
