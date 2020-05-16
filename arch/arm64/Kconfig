@@ -45,10 +45,14 @@ choice
 
 config PI_MINI_UART
 	bool "mini_uart"
+	select DEBUG_ON_EARLY_ASM
 
 config PI_PL_UART
 	bool "pl_uart"
 endchoice
+
+config DEBUG_ON_EARLY_ASM
+	bool
 
 #source "kernel/Kconfig"
 source "init/Kconfig"

@@ -14,8 +14,26 @@ proc_hang:
 	b 	proc_hang
 
 master:
-	mrs x0, CurrentEL
-	cmp x0, #CurrentEL_EL3
+#ifdef CONFIG_DEBUG_ON_EARLY_ASM
+        /* init uart and print the string*/
+	bl __init_uart
+	bl put_string_uart
+#endif
+
+	mrs x5, CurrentEL
+
+#ifdef CONFIG_DEBUG_ON_EARLY_ASM
+	/* get the currentEL value */
+	lsr x2, x5, #2
+	mov x0, #48
+	add x0, x0, x2
+	bl put_uart
+	/* print the new line tab */
+	mov x0, #10
+	bl put_uart
+#endif
+
+	cmp x5, #CurrentEL_EL3
 	b.eq el3_entry
 	b el2_entry
 
