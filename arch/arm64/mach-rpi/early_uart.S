@@ -1,11 +1,6 @@
 #include <mach/mini_uart.h>
 #include <mach/gpio.h>
 
-string1:
-	.ascii "boot EL="
-len1:
-	.int 8
-
 .align 2
 .globl __init_uart
 __init_uart:
@@ -62,7 +57,6 @@ __init_uart:
 	str x2, [x1]
 	ret
 
-.align 2
 .globl put_uart
 put_uart:
 	ldr x1, =AUX_MU_LSR_REG
@@ -76,22 +70,20 @@ put_uart:
 	str x0, [x1]
 	ret
 
-.align 2
 .globl put_string_uart
 put_string_uart:
-	ldr x4, =string1
-	mov x5, #8
+	mov x4, x0
 	mov x3, xzr
-	/* save to lr register */
+	/* save lr register */
 	mov x6, x30
 1:
 	ldrb w0, [x4, x3]
 	bl put_uart
 	add x3, x3, #1
-	cmp x5, x3
+	cmp w0, wzr
 	bne 1b
 
-	/* restore the lr and return*/
+	/* restore lr and return*/
 	mov x30, x6
 	ret
 

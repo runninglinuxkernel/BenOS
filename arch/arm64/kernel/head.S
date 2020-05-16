@@ -1,8 +1,10 @@
 #include <asm/mm.h>
 #include <asm/sysregs.h>
 
-.section ".text.boot"
+string1:
+	.string "Booting at EL"
 
+.section ".text.boot"
 .globl _start
 _start:
 	mrs	x0, mpidr_el1
@@ -17,6 +19,7 @@ master:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
         /* init uart and print the string*/
 	bl __init_uart
+	ldr x0, =string1
 	bl put_string_uart
 #endif
 
