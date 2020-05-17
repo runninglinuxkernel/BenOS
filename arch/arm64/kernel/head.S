@@ -1,8 +1,9 @@
 #include <asm/mm.h>
 #include <asm/sysregs.h>
 
+.align 2
 string1:
-	.string "Booting at EL"
+	.string "Booting at EL\0"
 
 .section ".text.boot"
 .globl _start
@@ -19,28 +20,18 @@ master:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
         /* init uart and print the string*/
 	bl __init_uart
-	ldr x0, =string1
-	bl put_string_uart
+	bl print_el
 #endif
 
 	mrs x5, CurrentEL
-
-#ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	/* get the currentEL value */
-	lsr x2, x5, #2
-	mov x0, #48
-	add x0, x0, x2
-	bl put_uart
-	/* print the new line tab */
-	mov x0, #10
-	bl put_uart
-#endif
-
 	cmp x5, #CurrentEL_EL3
 	b.eq el3_entry
 	b el2_entry
 
 el3_entry:
+#ifdef CONFIG_DEBUG_ON_EARLY_ASM
+	bl print_el
+#endif
 	ldr x0, =SCTLR_VALUE_MMU_DISABLED
 	msr sctlr_el2, x0
 
@@ -59,6 +50,9 @@ el3_entry:
 	eret
 
 el2_entry:
+#ifdef CONFIG_DEBUG_ON_EARLY_ASM
+	bl print_el
+#endif
 	ldr x0, =SCTLR_VALUE_MMU_DISABLED
 	msr sctlr_el1, x0
 
@@ -71,6 +65,9 @@ el2_entry:
 	eret
 
 el1_entry:
+#ifdef CONFIG_DEBUG_ON_EARLY_ASM
+	bl print_el
+#endif
 	adr x0, bss_begin
 	adr x1, bss_end
 	sub x1, x1, x0
@@ -79,3 +76,25 @@ el1_entry:
 	mov sp, #LOW_MEMORY
 	bl kernel_main
 	b proc_hang // should never come here
+
+print_el:
+	mov x6, x30
+
+	/* print EL */
+	mov x0, #69
+	bl put_uart
+	mov x0, #76
+	bl put_uart
+
+	mrs x5, CurrentEL
+	/* get the currentEL value */
+	lsr x2, x5, #2
+	mov x0, #48
+	add x0, x0, x2
+	bl put_uart
+	/* print the new line tab */
+	mov x0, #10
+	bl put_uart
+
+	mov x30, x6
+	ret

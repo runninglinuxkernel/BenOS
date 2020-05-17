@@ -40,7 +40,7 @@ endchoice
 
 choice
 	prompt "Uart for Pi"
-	default PI_MINI_UART
+	default PI_PL_UART
 	depends on ARCH_BCM2835
 
 config PI_MINI_UART
@@ -49,6 +49,7 @@ config PI_MINI_UART
 
 config PI_PL_UART
 	bool "pl_uart"
+	select DEBUG_ON_EARLY_ASM
 endchoice
 
 config DEBUG_ON_EARLY_ASM
