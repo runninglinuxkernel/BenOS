@@ -1,9 +1,11 @@
 #include <asm/mm.h>
 #include <asm/sysregs.h>
 
-.align 2
+.section  .rodata
+.align 3
+.globl string1
 string1:
-	.string "Booting at EL\0"
+	.string "Booting at EL"
 
 .section ".text.boot"
 .globl _start

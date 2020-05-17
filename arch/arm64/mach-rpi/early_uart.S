@@ -1,4 +1,5 @@
 #include <mach/uart.h>
+#include <mach/mini_uart.h>
 #include <mach/gpio.h>
 
 .align 2
@@ -24,8 +25,8 @@ __init_uart:
 	bne 1b
 
 	ldr x1, =GPPUDCLK0
-	ldr x2, #0xc000
-	str x2, [x1]
+	ldr w2, #0xc000
+	str w2, [x1]
 
 	/* delay */
 	mov x0, #150
@@ -43,20 +44,23 @@ __init_uart:
 	ldr x1, =AUX_MU_CNTL_REG
 	str wzr, [x1]
 
-	ldr x1, =AUX_MU_CNTL_REG
+	ldr x1, =AUX_MU_IER_REG
 	str wzr, [x1]
 
 	ldr x1, =AUX_MU_LCR_REG
-	mov x2, #3
-	str x2, [x1]
+	mov w2, #3
+	str w2, [x1]
+
+	ldr x1, =AUX_MU_MCR_REG
+	str wzr, [x1]
 
 	ldr x1, =AUX_MU_BAUD_REG
-	mov x2, #270
-	str x2, [x1]
+	mov w2, #270
+	str w2, [x1]
 
 	ldr x1, =AUX_MU_CNTL_REG
-	mov x2, #3
-	str x2, [x1]
+	mov w2, #3
+	str w2, [x1]
 	ret
 
 put_uart:
@@ -68,7 +72,7 @@ put_uart:
 	b.eq 1b
 
 	ldr x1, =AUX_MU_IO_REG
-	str x0, [x1]
+	str w0, [x1]
 	ret
 #else /* PL_UART */
 __init_uart:
