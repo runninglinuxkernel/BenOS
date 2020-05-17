@@ -22,7 +22,6 @@ master:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
         /* init uart and print the string*/
 	bl __init_uart
-	bl print_el
 #endif
 
 	mrs x5, CurrentEL
@@ -56,6 +55,13 @@ el2_entry:
 	bl print_el
 #endif
 	ldr x0, =SCTLR_VALUE_MMU_DISABLED
+	msr sctlr_el2, x0
+
+	/* The Execution state for EL1 is AArch64 */
+	ldr x0, =HCR_VALUE
+	msr hcr_el2, x0
+
+	ldr x0, =SCTLR_VALUE_MMU_DISABLED
 	msr sctlr_el1, x0
 
 	ldr x0, =SPSR_EL1
@@ -80,13 +86,11 @@ el1_entry:
 	b proc_hang // should never come here
 
 print_el:
-	mov x6, x30
+	mov x10, x30
 
 	/* print EL */
-	mov x0, #69
-	bl put_uart
-	mov x0, #76
-	bl put_uart
+	ldr x0, =string1
+	bl put_string_uart
 
 	mrs x5, CurrentEL
 	/* get the currentEL value */
@@ -98,5 +102,5 @@ print_el:
 	mov x0, #10
 	bl put_uart
 
-	mov x30, x6
+	mov x30, x10
 	ret
