@@ -1,5 +1,6 @@
 #include <uart.h>
 #include <asm/sysregs.h>
+#include <printk.h>
 
 void kernel_main(void)
 {
@@ -9,10 +10,22 @@ void kernel_main(void)
 	uart_send_string("=Welcome BenOS!\r\n");
 	uart_send_string("i am benshushu!\r\n");
 
-	uart_send_string("running on EL");
+	printk("running on EL:\n");
 
 	el = get_currentel() >> 2;
-	uart_send(48+el);
+	printk("el=%3d\n", el);
+	printk("el=%-3d\n", el);
+	printk("el=%03d\n", el);
+	printk("el=0x%-3x\n", el);
+	printk("el=0x%03x\n", el);
+
+	printk("0x%hx\n", 0x123456789abcdef);
+	printk("0x%x\n", 0x123456789abcdef);
+	printk("0x%lx\n", 0x123456789abcdef);
+	printk("0x%llx\n", 0x123456789abcdef);
+
+	printk("%d\n", 0xfffffffe);
+	printk("%u\n", 0xfffffffe);
 
 	while (1)
 		uart_send(uart_recv());

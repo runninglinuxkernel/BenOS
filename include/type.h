@@ -31,6 +31,12 @@ typedef unsigned int u32;
 
 typedef long long s64;
 typedef unsigned long long u64;
+
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef unsigned int size_t;
+#endif
+
 #endif
 
 #endif
