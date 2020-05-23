@@ -58,21 +58,24 @@ static char *number(char *str, u64 num, int base, int size, int precision
 
 	c = (type & ZEROPAD) ? '0' : ' ';
 
-	if (type & SIGN && snum < 0) {
-		sign = '-';
-		num = -snum;
-	} else
-		sign = (type&PLUS) ? '+' : ((type&SPACE) ? ' ' : 0);
-
-	if (sign)
-		size--;
+	if (type & SIGN) {
+		if (snum < 0) {
+			sign = '-';
+			num = -snum;
+		} else if (type & PLUS) {
+			sign = '+';
+			size--;
+		} else if (type & SPACE) {
+			sign = ' ';
+			size--;
+		}
+	}
 
 	if (type & SPECIAL)
 		if (base == 16)
 			size -= 2;
 		else if (base == 8)
 			size--;
-
 
 	i = 0;
 	if (num == 0)
@@ -130,6 +133,21 @@ static u64 conver_number(va_list args, int qualifier, int flags)
 	return number;
 }
 
+/*
+ * printf function
+ *
+ * 1. flags:
+ *  - : 左对齐
+ *  + : 加号或减号,
+ *  # : specifier 是 o、x、X 时，增加前缀0x
+ *  0 : 使用零 填充字段宽度
+ *
+ * 2. 最小宽度width
+ * 3. 类型长度
+ *  h : short, short int
+ *  l : long, unsigned long, long int
+ *  ll: long long, unsigned long long
+ */
 static int myprintf(char *string, unsigned int size,
 		const char *fmt, va_list args)
 {
@@ -173,7 +191,7 @@ repeat:
 			goto repeat;
 		}
 
-		/* get field width */
+		/* 最小宽度（width）用于控制显示字段的宽度 */
 		field_width = -1;
 		if (is_digit(*fmt)) {
 			fmt = scan_number(fmt, &field_width);
@@ -185,7 +203,7 @@ repeat:
 			}
 		}
 
-		/* get the precision */
+		/* 精度（.precision）用于指定输出精度 */
 		precision = -1;
 		if (*fmt == '.') {
 			++fmt;
@@ -197,7 +215,10 @@ repeat:
 				precision = 0;
 		}
 
-		/* get the conversion qualifier */
+		/*
+		 * 类型长度用于控制待输出数据的
+		 * 数据类型长度
+		 */
 		qualifier = -1;
 		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L') {
 			qualifier = *fmt;
@@ -210,6 +231,7 @@ repeat:
 		}
 
 		switch (*fmt) {
+		/* 输出字符型*/
 		case 'c':
 			if (!(flags & LEFT))
 				while (--field_width > 0)
@@ -218,6 +240,8 @@ repeat:
 			while (--field_width > 0)
 				*pos++ = ' ';
 			break;
+
+		/* 输出字符串*/
 		case 's':
 			s = va_arg(args, char *);
 			if (!s)
@@ -237,20 +261,33 @@ repeat:
 				*pos++ = ' ';
 			break;
 
-		case 'o':
-			pos = number(pos, va_arg(args, unsigned long),
-				8, field_width, precision,
-				flags);
+		/*
+		 * 到此字符之前为止，一共输出的字符个数，
+		 * 不输出文本
+		 */
+		case 'n':
+			ip = (char *)va_arg(args, int *);
+			*ip = (pos - string);
 			break;
+
+		/* 输出类型为字符串*/
 		case 'p':
 			if (field_width == -1) {
-				field_width = 8;
+				field_width = 2 * sizeof(void *);
 				flags |= ZEROPAD;
 			}
 			pos = number(pos,
 				(unsigned long)va_arg(args, void *),
 				16, field_width, precision, flags);
 			break;
+
+		/* 以八进制表示的整数*/
+		case 'o':
+			pos = number(pos, va_arg(args, unsigned long),
+				8, field_width, precision,
+				flags);
+			break;
+		/* 以十六进制表示的整数*/
 		case 'x':
 			flags |= SMALL;
 		case 'X':
@@ -258,17 +295,15 @@ repeat:
 				conver_number(args, qualifier, flags),
 				16, field_width, precision, flags);
 			break;
+		/* 有符号的十进制有符号整数*/
 		case 'd':
 		case 'i':
 			flags |= SIGN;
+		/* 无符号十进制整数*/
 		case 'u':
 			pos = number(pos,
 				conver_number(args, qualifier, flags),
 				10, field_width, precision, flags);
-			break;
-		case 'n':
-			ip = (char *)va_arg(args, int *);
-			*ip = (pos - string);
 			break;
 
 		default:
