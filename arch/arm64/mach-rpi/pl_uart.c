@@ -2,6 +2,8 @@
 #include <mach/gpio.h>
 #include <asm/io.h>
 
+#define UART_REFERENCE_CLOCK  (48000000)
+
 void uart_send(char c)
 {
 	/* wait for transmit FIFO to have an available slot*/
@@ -31,9 +33,14 @@ void uart_send_string(char *str)
 void uart_init(void)
 {
 	unsigned int selector;
+	unsigned int bauddiv;
+	unsigned int ibrd;
+	unsigned int fbrd;
+	unsigned int baud_rate = 115200;
 
 	/* clean gpio4 */
-	selector = readl(GPFSEL1); selector &= ~(7<<12);
+	selector = readl(GPFSEL1);
+	selector &= ~(7<<12);
 	/* set alt0 for gpio14 */
 	selector |= 4<<12;
 	/* clean gpio15 */
@@ -51,20 +58,15 @@ void uart_init(void)
 	/* disable UART until configuration is done */
 	writel(0, U_CR_REG);
 
-	/*
-	 * baud divisor = UARTCLK / (16 * baud_rate)
-	= 48 * 10^6 / (16 * 115200) = 26.0416666667
-	integer part = 26
-	fractional part = (int) ((0.0416666667 * 64) + 0.5) = 3
-	generated baud rate divisor = 26 + (3 / 64) = 26.046875
-	generated baud rate = (48 * 10^6) / (16 * 26.046875) = 115177
-	error = |(115177 - 115200) / 115200 * 100| = 0.02%
-	*/
+	bauddiv = (UART_REFERENCE_CLOCK / baud_rate) * 1000 / 16;
+	ibrd = bauddiv / 1000;
 
 	/* baud rate divisor, integer part */
-	writel(26, U_IBRD_REG);
+	writel(ibrd, U_IBRD_REG);
+
+	fbrd = ((bauddiv - ibrd * 1000) * 64 + 500) / 1000;
 	/* baud rate divisor, fractional part */
-	writel(3, U_FBRD_REG);
+	writel(fbrd, U_FBRD_REG);
 
 	/* enable FIFOs and 8 bits frames */
 	writel((1<<4) | (3<<5), U_LCRH_REG);
@@ -73,4 +75,11 @@ void uart_init(void)
 	writel(0, U_IMSC_REG);
 	/* enable UART, receive and transmit */
 	writel(1 | (1<<8) | (1<<9), U_CR_REG);
+}
+
+void putchar(char c)
+{
+	if (c == '\n')
+		uart_send('\r');
+	uart_send(c);
 }

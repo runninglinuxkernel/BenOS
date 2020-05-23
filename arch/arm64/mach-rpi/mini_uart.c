@@ -86,3 +86,10 @@ void uart_init(void)
 	 */
 	writel(3, AUX_MU_CNTL_REG);
 }
+
+void putchar(char c)
+{
+	if (c == '\n')
+		uart_send('\r');
+	uart_send(c);
+}

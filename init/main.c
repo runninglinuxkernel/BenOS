@@ -24,8 +24,8 @@ void kernel_main(void)
 	printk("0x%lx\n", 0x123456789abcdef);
 	printk("0x%llx\n", 0x123456789abcdef);
 
-	printk("%d\n", 0xfffffffe);
-	printk("%u\n", 0xfffffffe);
+	printk("%d data\n", 0xfffffffe);
+	printk("%u data\n", 0xfffffffe);
 
 	while (1)
 		uart_send(uart_recv());
