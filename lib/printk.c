@@ -40,11 +40,8 @@ static const char *scan_number(const char *string, int *number)
 static char *number(char *str, u64 num, int base, int size, int precision
 	, int type)
 {
-	char c, sign, tmp[36];
+	char c, sign = 0, tmp[128];
 	s64 snum;
-
-	if (type & SIGN)
-		snum = (s64)num;
 
 	const char *digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	int i;
@@ -59,6 +56,7 @@ static char *number(char *str, u64 num, int base, int size, int precision
 	c = (type & ZEROPAD) ? '0' : ' ';
 
 	if (type & SIGN) {
+		snum = (s64)num;
 		if (snum < 0) {
 			sign = '-';
 			num = -snum;
@@ -112,27 +110,6 @@ static char *number(char *str, u64 num, int base, int size, int precision
 	return str;
 }
 
-static u64 conver_number(va_list args, int qualifier, int flags)
-{
-	u64 number = 0;
-
-	if (qualifier == 'L') {
-		number = va_arg(args, u64);
-		if (flags & SIGN)
-			number = (s64)number;
-	} else if (qualifier == 'h') {
-		number = (u16)va_arg(args, int);
-		if (flags & SIGN)
-			number = (s16)number;
-	} else {
-		number = va_arg(args, u32);
-		if (flags & SIGN)
-			number = (s32)number;
-	}
-
-	return number;
-}
-
 /*
  * printf function
  *
@@ -149,7 +126,7 @@ static u64 conver_number(va_list args, int qualifier, int flags)
  *  ll: long long, unsigned long long
  */
 static int myprintf(char *string, unsigned int size,
-		const char *fmt, va_list args)
+		const char *fmt, va_list arg)
 {
 	char *pos;
 	int flags;
@@ -160,6 +137,8 @@ static int myprintf(char *string, unsigned int size,
 	char *s;
 	int i;
 	int len;
+	u64 num;
+	int base;
 
 	pos = string;
 
@@ -196,7 +175,7 @@ repeat:
 		if (is_digit(*fmt)) {
 			fmt = scan_number(fmt, &field_width);
 		} else if (*fmt == '*') {
-			field_width = va_arg(args, int);
+			field_width = va_arg(arg, int);
 			if (field_width < 0) {
 				field_width = -field_width;
 				flags |= LEFT;
@@ -210,7 +189,7 @@ repeat:
 			if (is_digit(*fmt))
 				fmt = scan_number(fmt, &precision);
 			else if (*fmt == '*')
-				precision = va_arg(args, int);
+				precision = va_arg(arg, int);
 			if (precision < 0)
 				precision = 0;
 		}
@@ -236,14 +215,15 @@ repeat:
 			if (!(flags & LEFT))
 				while (--field_width > 0)
 					*pos++ = ' ';
-			*pos++ = (unsigned char)va_arg(args, int);
+			*pos++ = (unsigned char)va_arg(arg, int);
 			while (--field_width > 0)
 				*pos++ = ' ';
-			break;
+			/* */
+			continue;
 
 		/* 输出字符串*/
 		case 's':
-			s = va_arg(args, char *);
+			s = va_arg(arg, char *);
 			if (!s)
 				s = "<NULL>";
 			len = strlen(s);
@@ -259,41 +239,39 @@ repeat:
 				*pos++ = *s++;
 			while (len < field_width--)
 				*pos++ = ' ';
-			break;
+			continue;
 
 		/*
 		 * 到此字符之前为止，一共输出的字符个数，
 		 * 不输出文本
 		 */
 		case 'n':
-			ip = (char *)va_arg(args, int *);
+			ip = (char *)va_arg(arg, int *);
 			*ip = (pos - string);
-			break;
+			continue;
 
-		/* 输出类型为字符串*/
+		/* 处理数字*/
+
+		/* 输出类型输出指针*/
 		case 'p':
 			if (field_width == -1) {
 				field_width = 2 * sizeof(void *);
 				flags |= ZEROPAD;
 			}
 			pos = number(pos,
-				(unsigned long)va_arg(args, void *),
+				(unsigned long)va_arg(arg, void *),
 				16, field_width, precision, flags);
-			break;
+			continue;
 
 		/* 以八进制表示的整数*/
 		case 'o':
-			pos = number(pos, va_arg(args, unsigned long),
-				8, field_width, precision,
-				flags);
+			base = 8;
 			break;
 		/* 以十六进制表示的整数*/
 		case 'x':
 			flags |= SMALL;
 		case 'X':
-			pos = number(pos,
-				conver_number(args, qualifier, flags),
-				16, field_width, precision, flags);
+			base = 16;
 			break;
 		/* 有符号的十进制有符号整数*/
 		case 'd':
@@ -301,9 +279,7 @@ repeat:
 			flags |= SIGN;
 		/* 无符号十进制整数*/
 		case 'u':
-			pos = number(pos,
-				conver_number(args, qualifier, flags),
-				10, field_width, precision, flags);
+			base = 10;
 			break;
 
 		default:
@@ -315,6 +291,29 @@ repeat:
 				--fmt;
 			break;
 		}
+
+		if (qualifier == 'L') {
+			if (flags & SIGN)
+				num = va_arg(arg, s64);
+			else
+				num = va_arg(arg, u64);
+		} else if (qualifier == 'h') {
+			if (flags & SIGN)
+				num = (short)va_arg(arg, int);
+			else
+				num = (unsigned short)va_arg(arg, unsigned int);
+		} else if (qualifier == 'l') {
+			if (flags & SIGN)
+				num = va_arg(arg, long);
+			else
+				num = va_arg(arg, unsigned long);
+		} else {
+			if (flags & SIGN)
+				num = (int)va_arg(arg, int);
+			else
+				num = va_arg(arg, unsigned int);
+		}
+		pos = number(pos, num, base, field_width, precision, flags);
 	}
 
 	*pos = '\0';
@@ -329,11 +328,11 @@ int printk(const char *fmt, ...)
 
 	va_start(arg, fmt);
 	len = myprintf(print_buf, sizeof(print_buf), fmt, arg);
+	va_end(arg);
 	for (i = 0; i < len; i++) {
 		putchar(print_buf[i]);
 		if (i > sizeof(print_buf))
 			break;
 	}
-	va_end(arg);
 	return len;
 }
