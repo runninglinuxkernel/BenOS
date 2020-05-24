@@ -5,28 +5,42 @@
 #define BAD_FIQ         2
 #define BAD_ERROR       3
 
-/* vector table entry */
+/*
+   vector table entry
+   每个表项是128字节， align 7表示128字节对齐
+ */
 	.macro vtentry label
 	.align 7
 	b \label
 	.endm
 
-/* handle invlid vector*/
-	.macro inv_entry el, reason, regsize = 64
-	kernel_entry el, regsize
+/*
+   处理无效的异常向量
+ */
+	.macro inv_entry el, reason
+	kernel_entry el
 	mov x0, sp
 	mov x1, #\reason
 	mrs x2, esr_el1
 	b bad_mode
 	.endm
 
-/* save the exception context */
-	.macro kernel_entry el, regsize = 64
-	sub sp, sp, #S_FRAME_SIZE
-	.if     \regsize == 32
-	mov w0, w0
-	.endif
+/*
+   保存异常发生时候的上下文
 
+   保存x0~x29，x30（lr），sp, elr, spsr保存到 栈中
+ */
+	.macro kernel_entry el
+	/*
+	   SP指向了栈底, S_FRAME_SIZE表示一个栈框的大小.
+	   定义一个struct pt_regs来描述一个栈框,
+	   用在异常发生时保存上下文.
+	 */
+	sub sp, sp, #S_FRAME_SIZE
+
+	/*
+	   保存通用寄存器x0~x29到栈框里pt_regs->x0~x29
+	 */
 	stp x0, x1, [sp, #16 *0]
 	stp x2, x3, [sp, #16 *1]
 	stp x4, x5, [sp, #16 *2]
@@ -43,36 +57,31 @@
 	stp x26, x27, [sp, #16 *13]
 	stp x28, x29, [sp, #16 *14]
 
-	.if \el == 0
-	.else
+	/* x21: 栈顶 的位置*/
 	add     x21, sp, #S_FRAME_SIZE
-	.endif
 
 	mrs     x22, elr_el1
 	mrs     x23, spsr_el1
-	stp     lr, x21, [sp, #S_LR]
-	stp     x22, x23, [sp, #S_PC]
 
+	/* 把lr保存到pt_regs->lr, 把sp保存到pt_regs->sp位置*/
+	stp     lr, x21, [sp, #S_LR]
+	/* 把elr_el1保存到pt_regs->pc中
+	   把spsr_elr保存到pt_regs->pstate中*/
+	stp     x22, x23, [sp, #S_PC]
 	.endm
 
-/* restore the exception context */
-	.macro kernel_exit el, ret = 0
+/*
+   恢复异常发生时保存下来的上下文
+ */
+	.macro kernel_exit el
+	/* 从pt_regs->pc中恢复elr_el1,
+	   从pt_regs->pstate中恢复spsr_el1
+	 */
 	ldp     x21, x22, [sp, #S_PC]           // load ELR, SPSR
-
-	.if \el == 0
-	ldr     x23, [sp, #S_SP]                // load return stack pointer
-	msr     sp_el0, x23
-	.endif
-
 	msr     elr_el1, x21                    // set up the return data
 	msr     spsr_el1, x22
 
-	.if \ret
-	ldr     x1, [sp, #S_X1]                 // preserve x0 (syscall return)
-	.else
 	ldp     x0, x1, [sp, #16 * 0]
-	.endif
-
 	ldp     x2, x3, [sp, #16 * 1]
 	ldp     x4, x5, [sp, #16 * 2]
 	ldp     x6, x7, [sp, #16 * 3]
@@ -87,31 +96,56 @@
 	ldp     x24, x25, [sp, #16 * 12]
 	ldp     x26, x27, [sp, #16 * 13]
 	ldp     x28, x29, [sp, #16 * 14]
+
+	/* 从pt_regs->lr中恢复lr*/
 	ldr     lr, [sp, #S_LR]
 	add     sp, sp, #S_FRAME_SIZE           // restore sp
 	eret                                    // return to kernel
 	.endm
 
 
-/* Vector Table */
+/*
+ * Vector Table
+ *
+ * ARM64的异常向量表一共占用2048个字节
+ * 分成4组，每组4个表项，每个表项占128字节
+ * 参见ARMv8 spec v8.6第D1.10节
+ * align 11表示2048字节对齐
+ */
 .align 11
 .global vectors
 vectors:
+	/* Current EL with SP0
+	   当前系统运行在EL1时使用EL0的栈指针SP
+	   这是一种异常错误的类型
+	 */
 	vtentry el1_sync_invalid
 	vtentry el1_irq_invalid
 	vtentry el1_fiq_invalid
 	vtentry el1_error_invalid
 
+	/* Current EL with SPx
+	   当前系统运行在EL1时使用EL1的栈指针SP
+	   这说明系统在内核态发生了异常
+
+	   Note: 我们暂时只实现IRQ中断
+	 */
 	vtentry el1_sync_invalid
 	vtentry el1_irq
 	vtentry el1_fiq_invalid
 	vtentry el1_error_invalid
 
+	/* Lower EL using AArch64
+	   在用户态的aarch64的程序发生了异常
+	 */
 	vtentry el0_sync_invalid
-	vtentry el0_irq
+	vtentry el0_irq_invalid
 	vtentry el0_fiq_invalid
 	vtentry el0_error_invalid
 
+	/* Lower EL using AArch32
+	   在用户态的aarch32的程序发生了异常
+	 */
 	vtentry el0_sync_invalid
 	vtentry el0_irq_invalid
 	vtentry el0_fiq_invalid
@@ -134,14 +168,7 @@ el0_fiq_invalid:
 el0_error_invalid:
 	inv_entry 0, BAD_ERROR
 
-.align 6
 el1_irq:
 	kernel_entry 1
 	bl irq_handle
 	kernel_exit 1
-
-.align 6
-el0_irq:
-	kernel_entry 0
-	bl irq_handle
-	kernel_exit 0
