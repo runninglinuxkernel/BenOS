@@ -76,6 +76,11 @@ el1_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
 	bl print_el
 #endif
+	/* set vector table*/
+	ldr     x5, =vectors
+	msr     vbar_el1, x5
+	isb
+
 	adr x0, bss_begin
 	adr x1, bss_end
 	sub x1, x1, x0

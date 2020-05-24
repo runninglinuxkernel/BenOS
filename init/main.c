@@ -1,6 +1,8 @@
 #include <uart.h>
 #include <asm/sysregs.h>
 #include <printk.h>
+#include <irq.h>
+#include <asm/timer.h>
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
@@ -60,6 +62,9 @@ void kernel_main(void)
 	printk("%u data\n", 0xfffffffe);
 
 	printk("%u, %d, %x\n", 1024, -2, -2);
+
+	timer_init();
+	raw_local_irq_enable();
 
 	while (1)
 		uart_send(uart_recv());
