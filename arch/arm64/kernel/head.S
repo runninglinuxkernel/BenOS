@@ -82,7 +82,7 @@ el1_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
 	bl print_el
 #endif
-	/* set vector table*/
+	/* 设置异常向量表基地址到vbar寄存器 */
 	ldr     x5, =vectors
 	msr     vbar_el1, x5
 	isb
