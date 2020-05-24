@@ -61,6 +61,12 @@ el2_entry:
 	ldr x0, =HCR_HOST_NVHE_FLAGS
 	msr hcr_el2, x0
 
+	/* Generic timers. */
+	mrs     x0, cnthctl_el2
+	orr     x0, x0, #3                      // Enable EL1 physical timers
+	msr     cnthctl_el2, x0
+	msr     cntvoff_el2, xzr                // Clear virtual offset
+
 	ldr x0, =SCTLR_EL1_VALUE_MMU_DISABLED
 	msr sctlr_el1, x0
 
@@ -76,6 +82,11 @@ el1_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
 	bl print_el
 #endif
+	/* set vector table*/
+	ldr     x5, =vectors
+	msr     vbar_el1, x5
+	isb
+
 	adr x0, bss_begin
 	adr x1, bss_end
 	sub x1, x1, x0

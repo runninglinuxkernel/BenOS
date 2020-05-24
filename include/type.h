@@ -37,6 +37,8 @@ typedef unsigned long long u64;
 typedef unsigned int size_t;
 #endif
 
+#define offsetof(TYPE, MEMBER)	((long)&((TYPE *)0)->MEMBER)
+
 #endif
 
 #endif
