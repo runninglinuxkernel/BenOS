@@ -3,8 +3,11 @@
 #include <asm/io.h>
 #include <printk.h>
 #include <mach/arm_local_reg.h>
+#include <timer.h>
+#include <asm/sysregs.h>
+#include <sched.h>
 
-static unsigned int val = (1<<24);
+static unsigned int arch_timer_rate;
 
 static int generic_timer_init(void)
 {
@@ -29,6 +32,19 @@ static int generic_timer_reset(unsigned int val)
 	return 0;
 }
 
+static unsigned int generic_timer_get_freq(void)
+{
+	unsigned int freq;
+
+	asm volatile(
+		"mrs %0, cntfrq_el0"
+		: "=r" (freq)
+		:
+		: "memory");
+
+	return freq;
+}
+
 static void enable_timer_interrupt(void)
 {
 	writel(CNT_PNS_IRQ, TIMER_CNTRL0);
@@ -36,14 +52,19 @@ static void enable_timer_interrupt(void)
 
 void timer_init(void)
 {
+	arch_timer_rate = generic_timer_get_freq();
+	//printk("cntp freq:0x%x\r\n", arch_timer_rate);
+	arch_timer_rate /= HZ;
+
 	generic_timer_init();
-	generic_timer_reset(val);
+	generic_timer_reset(arch_timer_rate);
 
 	enable_timer_interrupt();
 }
 
 void handle_timer_irq(void)
 {
-	generic_timer_reset(val);
-	printk("Core0 Timer interrupt received\r\n");
+	//printk("Core0 Timer interrupt received\r\n");
+	generic_timer_reset(arch_timer_rate);
+	tick_handle_periodic();
 }
