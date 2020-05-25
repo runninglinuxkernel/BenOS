@@ -3,8 +3,9 @@
 #include <asm/io.h>
 #include <printk.h>
 #include <mach/arm_local_reg.h>
+#include <timer.h>
 
-static unsigned int val = (1<<24);
+static unsigned int val = NSEC_PER_SEC / HZ;
 
 static int generic_timer_init(void)
 {

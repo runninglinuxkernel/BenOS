@@ -55,5 +55,39 @@ endchoice
 config DEBUG_ON_EARLY_ASM
 	bool
 
+choice
+	prompt "Timer frequency"
+	default HZ_250
+	help
+	Allows the configuration of the timer frequency.
+
+config HZ_100
+	bool "100 HZ"
+	help
+	100 Hz is a typical choice for servers, SMP and NUMA systems
+	with lots of processors that may show reduced performance if
+	too many timer interrupts are occurring.
+
+config HZ_250
+	bool "250 HZ"
+	help
+	250 Hz is a good compromise choice allowing server performance
+	while also showing good interactive responsiveness even
+	on SMP and NUMA systems. If you are going to be using NTSC video
+	or multimedia, selected 300Hz instead.
+
+config HZ_1000
+	bool "1000 HZ"
+	help
+	1000 Hz is the preferred choice for desktop systems and other
+	systems requiring fast interactive responses to events.
+endchoice
+
+config HZ
+	int
+	default 100 if HZ_100
+	default 250 if HZ_250
+	default 1000 if HZ_1000
+
 #source "kernel/Kconfig"
 source "init/Kconfig"
