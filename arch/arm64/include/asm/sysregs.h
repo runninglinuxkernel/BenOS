@@ -192,20 +192,27 @@
 #define CurrentEL_EL2 (2 << 2)
 #define CurrentEL_EL3 (3 << 2)
 
-#define read_sysreg(r) ({ \
+/*
+ * 在带参数的宏，#号作为一个预处理运算符,
+ * 可以把记号转换成字符串
+ *
+ * 下面这句话会在预编译阶段变成：
+ *  asm volatile("mrs %0, " "reg" : "=r" (__val)); __val; });
+ */
+#define read_sysreg(reg) ({ \
 		u64 _val; \
-		asm volatile("mrs %0, r" \
+		asm volatile("mrs %0," #reg \
 		: "=r"(_val)); \
 		_val; \
 })
 
-#define write_sysreg(v, r) (do { \
-		u64 _val = (u64)v; \
-		asm volatile("msr r, %0" \
+#define write_sysreg(val, reg) (do { \
+		u64 _val = (u64)val; \
+		asm volatile("msr " #reg ", %0" \
 		:: "rZ"(_val)); \
 } while (0))
 
-#define get_currentel(r) ({ \
+#define get_currentel() ({ \
 		u64 _val; \
 		asm volatile("mrs %0, CurrentEL" \
 		: "=r"(_val)); \

@@ -39,7 +39,7 @@ void kernel_main(void)
 	uart_send_string("i am benshushu!\r\n");
 
 	printk("running on EL:");
-	el = get_currentel() >> 2;
+	el = read_sysreg(CurrentEL) >> 2;
 	printk("%d\n", el);
 
 	/* print mem layout*/
