@@ -6,3 +6,7 @@
 #define PAGE_SIZE (1 << PAGE_SHIFT)
 #define SECTION_SIZE (1 << SECTION_SHIFT)
 
+#define PAGE_MASK (~(PAGE_SIZE-1))
+/* to align the pointer to the (next) page boundary */
+#define PAGE_ALIGN(addr) (((addr)+PAGE_SIZE-1)&PAGE_MASK)
+

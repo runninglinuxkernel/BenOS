@@ -1,5 +1,6 @@
 #include <asm/system.h>
 #include <mm.h>
+#include <asm/processor.h>
 
 #define NR_TASK 128
 #define THREAD_SIZE  (2 * PAGE_SIZE)
