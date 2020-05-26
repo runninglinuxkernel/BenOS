@@ -251,7 +251,8 @@ scripts: scripts_basic include/config/auto.conf
 init-y		:= init/
 libs-y		:= lib/
 #drivers-y	:= drivers/
-core-y		:=
+core-y		:= kernel/
+core-y          += mm/
 
 ifeq ($(dot-config),1)
 # Read in config

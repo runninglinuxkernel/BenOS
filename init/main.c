@@ -3,6 +3,7 @@
 #include <printk.h>
 #include <irq.h>
 #include <asm/timer.h>
+#include <sched.h>
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
@@ -28,6 +29,20 @@ static void print_mem(void)
 	printk("        .bss: 0x%08lx - 0x%08lx (%6ld B)\n",
 			(u64)_bss, (u64)_ebss,
 			(u32)(_ebss - _bss));
+}
+
+static void delay(int n)
+{
+	while (n--)
+		;
+}
+
+void kernel_thread(void)
+{
+	while (1) {
+		delay(10000000);
+		printk("%s: %s\n", __func__, "12345");
+	}
 }
 
 void kernel_main(void)
@@ -65,6 +80,16 @@ void kernel_main(void)
 
 	timer_init();
 	raw_local_irq_enable();
+
+	int pid;
+
+	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread, 0);
+	if (pid < 0)
+		printk("create thread fail\n");
+
+	struct task_struct *next = g_task[pid];
+
+	switch_to(next);
 
 	while (1)
 		uart_send(uart_recv());
