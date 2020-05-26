@@ -1,11 +1,18 @@
 #include <asm/mm.h>
 #include <asm/sysregs.h>
+#include <sched.h>
 
 .section  .rodata
 .align 3
 .globl string1
 string1:
 	.string "Booting at EL"
+
+/* 8字节对齐，否则会出错*/
+.align 3
+.globl sp_addr
+sp_addr:
+	.quad init_task_union +THREAD_START_SP
 
 .section ".text.boot"
 .globl _start
@@ -92,7 +99,11 @@ el1_entry:
 	sub x1, x1, x0
 	bl memzero
 
-	mov sp, #LOW_MEMORY
+	/* set sp to top of init_task_union */
+	ldr x8, =sp_addr
+	ldr x9, [x8]
+	mov sp, x9
+
 	bl kernel_main
 	b proc_hang // should never come here
 

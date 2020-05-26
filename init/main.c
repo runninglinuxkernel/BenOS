@@ -12,6 +12,8 @@ extern char _rodata[], _erodata[];
 extern char _data[], _edata[];
 extern char _bss[], _ebss[];
 
+extern union task_union init_task_union;
+
 static void print_mem(void)
 {
 	printk("BenOS image layout:\n");
@@ -46,6 +48,8 @@ void kernel_thread(void)
 	}
 }
 
+register unsigned long current_stack_pointer asm ("sp");
+
 void kernel_main(void)
 {
 	int el;
@@ -64,6 +68,11 @@ void kernel_main(void)
 	/* print mem layout*/
 	print_mem();
 	printk("\r\n");
+
+	/* check the 0 thread's task_struct address */
+	printk("0 thread's task_struct address: 0x%lx\n",
+			&init_task_union.task);
+	printk("the SP of 0 thread: 0x%lx\n", current_stack_pointer);
 
 	/* test printk */
 	printk("el=%3d\n", el);

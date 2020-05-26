@@ -1,3 +1,5 @@
+#include <page.h>
+
 OUTPUT_ARCH(aarch64)
 ENTRY(_start)
 
@@ -23,6 +25,8 @@ SECTIONS
 	_data = .;
 	.data : {
 		*(.data)
+		. = ALIGN(PAGE_SIZE);
+		*(.data.init_task)
 	}
 
 	. = ALIGN(0x8);
