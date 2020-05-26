@@ -3,7 +3,9 @@
 #include <asm/processor.h>
 
 #define NR_TASK 128
-#define THREAD_SIZE  (2 * PAGE_SIZE)
+
+/* 暂时使用1个4KB页面来当作内核栈*/
+#define THREAD_SIZE  (1 * PAGE_SIZE)
 
 enum task_state {
 	TASK_RUNNING = 0,
@@ -17,6 +19,7 @@ enum task_flags {
 	PF_KTHREAD = 1 << 0,
 };
 
+/* 进程PCB */
 struct task_struct {
 	enum task_state state;
 	enum task_flags flags;
@@ -26,11 +29,15 @@ struct task_struct {
 	struct cpu_context cpu_context;
 };
 
+/*
+ * task_struct数据结构存储在内核栈的底部
+ */
 union task_union {
 	struct task_struct task;
 	unsigned long stack[THREAD_SIZE/sizeof(long)];
 };
 
+/* 0号进程即init进程 */
 #define INIT_TASK(task) \
 {                      \
 	.state = 0,     \

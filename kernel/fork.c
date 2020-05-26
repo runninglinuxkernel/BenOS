@@ -2,10 +2,12 @@
 #include <string.h>
 #include <memory.h>
 
+/* 0号进程为init进程 */
 union task_union init_task_union = {INIT_TASK(task)};
 
 struct task_struct *current = &init_task_union.task;
 
+/* 定义一个全局的task_struct数组来存放进程的PCB*/
 struct task_struct *g_task[NR_TASK] = {&init_task_union.task,};
 
 static int find_empty_task(void)
@@ -20,6 +22,9 @@ static int find_empty_task(void)
 	return -1;
 }
 
+/*
+ * pt_regs存储在栈顶
+ */
 static struct pt_regs *task_pt_regs(struct task_struct *tsk)
 {
 	unsigned long p;
@@ -29,6 +34,9 @@ static struct pt_regs *task_pt_regs(struct task_struct *tsk)
 	return (struct pt_regs *)p;
 }
 
+/*
+ * 设置子进程的上下文信息
+ */
 static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 		unsigned long fn, unsigned long arg)
 {
@@ -50,18 +58,20 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 	return 0;
 }
 
+/*
+ * fork一个新进程
+ * 1. 新建一个task_strut。 分配4KB页面用来存储内核栈,
+ * task_struct在栈底。
+ * 2. 分配PID
+ * 3. 设置进程的上下文
+ */
 int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg)
 {
 	struct task_struct *p;
-	unsigned long new_stack;
 	int pid;
 
 	p = (struct task_struct *)get_free_page();
 	if (!p)
-		goto error;
-
-	new_stack = get_free_page();
-	if (!new_stack)
 		goto error;
 
 	pid = find_empty_task();

@@ -173,11 +173,20 @@ el1_irq:
 	bl irq_handle
 	kernel_exit 1
 
+/*
+   对于用户进程，暂时还没实现
+ */
 .align 2
 .global ret_to_user
 ret_to_user:
 	inv_entry 0, BAD_ERROR
 
+/*
+ 进程fork之后第一次进程切换
+ 对于内核线程：
+    x19保存了进程回调函数的入口
+    x20保存进程的回调函数的参数
+ */
 .align 2
 .global ret_from_fork
 ret_from_fork:
@@ -187,6 +196,15 @@ ret_from_fork:
 1:
 	b ret_to_user
 
+/*
+进程切换： 保存prev进程的上下文，并且恢复next进程
+的上下文
+  cpu_switch_to(struct task_struct *prev,
+	   struct task_struct *next);
+
+需要保存的上下文： x19 ~ x29， sp， lr
+保存到进程的task_struct->cpu_context
+ */
 .align
 .global cpu_switch_to
 cpu_switch_to:
