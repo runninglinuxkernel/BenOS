@@ -1,11 +1,16 @@
-#include <asm/system.h>
-#include <mm.h>
-#include <asm/processor.h>
-
 #define NR_TASK 128
 
 /* 暂时使用1个4KB页面来当作内核栈*/
 #define THREAD_SIZE  (1 * PAGE_SIZE)
+#define THREAD_START_SP  (THREAD_SIZE - 8)
+
+#ifndef __ASSEMBLY__
+
+#include <asm/system.h>
+#include <mm.h>
+#include <asm/processor.h>
+#include <list.h>
+#include <timer.h>
 
 enum task_state {
 	TASK_RUNNING = 0,
@@ -54,3 +59,4 @@ void switch_to(struct task_struct *next);
 extern struct task_struct *cpu_switch_to(struct task_struct *prev,
 					 struct task_struct *next);
 
+#endif  /* __ASSEMBLY__ */

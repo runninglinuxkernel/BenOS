@@ -2,8 +2,11 @@
 #include <string.h>
 #include <memory.h>
 
+/* 把0号进程的内核栈 编译链接到.data.init_task段中 */
+#define __init_task_data __attribute__((__section__(".data.init_task")))
+
 /* 0号进程为init进程 */
-union task_union init_task_union = {INIT_TASK(task)};
+union task_union init_task_union __init_task_data = {INIT_TASK(task)};
 
 struct task_struct *current = &init_task_union.task;
 
