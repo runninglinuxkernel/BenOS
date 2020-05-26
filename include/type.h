@@ -1,6 +1,11 @@
 #ifndef _BENOS_TYPE_H
 #define _LINUX_TYPE_H
 
+#define SZ_1K				0x00000400
+#define SZ_4K				0x00001000
+#define SZ_1M				0x00100000
+#define SZ_1G				0x40000000
+
 #ifdef __ASSEMBLY__
 #define _AC(X,Y)	X
 #define _AT(T,X)	X

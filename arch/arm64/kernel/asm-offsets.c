@@ -20,7 +20,7 @@
 
 #include <target/kbuild.h>
 #include <target/compiler.h>
-#include <asm/system.h>
+#include <sched.h>
 
 int main(void)
 {
@@ -53,5 +53,7 @@ int main(void)
 	DEFINE(S_SYSCALLNO, offsetof(struct pt_regs, syscallno));
 	DEFINE(S_ORIG_ADDR_LIMIT, offsetof(struct pt_regs, orig_addr_limit));
 	DEFINE(S_STACKFRAME, offsetof(struct pt_regs, stackframe));
+
+	DEFINE(THREAD_CPU_CONTEXT, offsetof(struct task_struct, cpu_context));
 	return 0;
 }

@@ -9,3 +9,12 @@ size_t strlen(const char *s)
 
 	return sc - s;
 }
+
+void *memset(void *s, int c, size_t count)
+{
+	char *xs = s;
+
+	while (count--)
+		*xs++ = c;
+	return s;
+}
