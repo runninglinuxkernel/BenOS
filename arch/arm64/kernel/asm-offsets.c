@@ -55,5 +55,7 @@ int main(void)
 	DEFINE(S_STACKFRAME, offsetof(struct pt_regs, stackframe));
 
 	DEFINE(THREAD_CPU_CONTEXT, offsetof(struct task_struct, cpu_context));
+	DEFINE(TI_PREEMPT,  offsetof(struct task_struct, preempt_count));
+	DEFINE(NEED_RESCHED, offsetof(struct task_struct, need_resched));
 	return 0;
 }

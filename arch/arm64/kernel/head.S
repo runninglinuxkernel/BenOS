@@ -12,7 +12,7 @@ string1:
 .align 3
 .globl sp_addr
 sp_addr:
-	.quad init_task_union +THREAD_START_SP
+	.quad init_task_union + THREAD_START_SP
 
 .section ".text.boot"
 .globl _start
@@ -103,7 +103,6 @@ el1_entry:
 	ldr x8, =sp_addr
 	ldr x9, [x8]
 	mov sp, x9
-
 	bl kernel_main
 	b proc_hang // should never come here
 

@@ -6,12 +6,13 @@
 #define __init_task_data __attribute__((__section__(".data.init_task")))
 
 /* 0号进程为init进程 */
-union task_union init_task_union __init_task_data = {INIT_TASK(task)};
-
-struct task_struct *current = &init_task_union.task;
+union task_union init_task_union __init_task_data
+			= {INIT_TASK(init_task_union.task)};
 
 /* 定义一个全局的task_struct数组来存放进程的PCB*/
 struct task_struct *g_task[NR_TASK] = {&init_task_union.task,};
+
+unsigned long total_forks;
 
 static int find_empty_task(void)
 {
@@ -77,6 +78,8 @@ int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg)
 	if (!p)
 		goto error;
 
+	memset(p, 0, sizeof(*p));
+
 	pid = find_empty_task();
 	if (pid < 0)
 		goto error;
@@ -86,21 +89,18 @@ int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg)
 
 	p->state = TASK_RUNNING;
 	p->pid = pid;
+	p->counter = (current->counter + 1) >> 1;
+	current->counter >>= 1;
+	p->need_resched = 0;
+	p->preempt_count = 0;
+	p->priority = 2;
+	total_forks++;
 	g_task[pid] = p;
+	SET_LINKS(p);
+	wake_up_process(p);
 
 	return pid;
 
 error:
 	return -1;
-}
-
-void switch_to(struct task_struct *next)
-{
-	struct task_struct *prev = current;
-
-	if (current == next)
-		return;
-
-	current = next;
-	cpu_switch_to(prev, next);
 }

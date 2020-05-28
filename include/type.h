@@ -6,6 +6,8 @@
 #define SZ_1M				0x00100000
 #define SZ_1G				0x40000000
 
+#define NULL ((void *)0)
+
 #ifdef __ASSEMBLY__
 #define _AC(X,Y)	X
 #define _AT(T,X)	X
@@ -45,5 +47,4 @@ typedef unsigned int size_t;
 #define offsetof(TYPE, MEMBER)	((long)&((TYPE *)0)->MEMBER)
 
 #endif
-
 #endif

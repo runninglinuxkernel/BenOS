@@ -12,8 +12,6 @@ extern char _rodata[], _erodata[];
 extern char _data[], _edata[];
 extern char _bss[], _ebss[];
 
-extern union task_union init_task_union;
-
 static void print_mem(void)
 {
 	printk("BenOS image layout:\n");
@@ -40,15 +38,21 @@ static void delay(int n)
 		;
 }
 
-void kernel_thread(void)
+void kernel_thread1(void)
 {
 	while (1) {
-		delay(10000000);
+		delay(4000000);
 		printk("%s: %s\n", __func__, "12345");
 	}
 }
 
-register unsigned long current_stack_pointer asm ("sp");
+void kernel_thread2(void)
+{
+	while (1) {
+		delay(2000000);
+		printk("%s: %s\n", __func__, "abcde");
+	}
+}
 
 void kernel_main(void)
 {
@@ -64,6 +68,7 @@ void kernel_main(void)
 
 	/* init mm */
 	mem_init((unsigned long)_ebss, TOTAL_MEMORY);
+	sched_init();
 
 	/* print mem layout*/
 	print_mem();
@@ -96,14 +101,14 @@ void kernel_main(void)
 
 	int pid;
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread, 0);
+	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread1, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 
-	struct task_struct *next = g_task[pid];
-
-	switch_to(next);
+	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread2, 0);
+	if (pid < 0)
+		printk("create thread fail\n");
 
 	while (1)
-		uart_send(uart_recv());
+		;
 }

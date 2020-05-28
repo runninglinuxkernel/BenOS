@@ -1,4 +1,6 @@
 #include <asm/asm-offsets.h>
+#include <asm/mm.h>
+#include <sched.h>
 
 #define BAD_SYNC        0
 #define BAD_IRQ         1
@@ -168,10 +170,31 @@ el0_fiq_invalid:
 el0_error_invalid:
 	inv_entry 0, BAD_ERROR
 
+tsk     .req    x28             // current thread_info
+
+	.macro get_thread_info, rd
+	mov     \rd, sp
+	and     \rd, \rd, #~(THREAD_SIZE - 1)   // top of stack
+	.endm
+
+.align 2
 el1_irq:
 	kernel_entry 1
 	bl irq_handle
+
+	get_thread_info tsk
+	ldr  w24, [tsk, #TI_PREEMPT]
+	cbnz w24, 1f
+	ldr  w0, [tsk, #NEED_RESCHED]
+	cbz w0, 1f
+	bl el1_preempt
+1:
 	kernel_exit 1
+
+el1_preempt:
+	mov     x24, lr
+	bl preempt_schedule_irq
+	ret     x24
 
 /*
    对于用户进程，暂时还没实现
