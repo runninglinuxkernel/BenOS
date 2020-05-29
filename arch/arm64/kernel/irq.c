@@ -3,7 +3,7 @@
 #include <mach/arm_local_reg.h>
 #include <printk.h>
 
-void irq_handle(void)
+void arch_irq_handle(void)
 {
 	unsigned int irq = readl(ARM_LOCAL_IRQ_SOURCE0);
 

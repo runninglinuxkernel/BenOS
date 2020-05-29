@@ -1,17 +1,10 @@
-
-#define NR_TASK 128
-
-/* 暂时使用1个4KB页面来当作内核栈*/
-#define THREAD_SIZE  (1 * PAGE_SIZE)
-#define THREAD_START_SP  (THREAD_SIZE - 8)
-
-#ifndef __ASSEMBLY__
-
 #include <asm/system.h>
 #include <mm.h>
 #include <asm/processor.h>
 #include <list.h>
 #include <timer.h>
+
+#define NR_TASK 128
 
 struct task_struct;
 struct run_queue;
@@ -117,7 +110,32 @@ struct task_struct *pick_next_task(struct run_queue *rq,
 void tick_handle_periodic(void);
 void wake_up_process(struct task_struct *p);
 
+static inline void clear_task_resched(struct task_struct *p)
+{
+	p->need_resched = 0;
+}
+
 #include <asm/current.h>
+
+#define PREEMPT_BITS	8
+#define HARDIRQ_BITS	4
+
+#define PREEMPT_SHIFT	0
+#define HARDIRQ_SHIFT	(PREEMPT_SHIFT + PREEMPT_BITS)
+
+#define PREEMPT_OFFSET	(1UL << PREEMPT_SHIFT)
+#define HARDIRQ_OFFSET	(1UL << HARDIRQ_SHIFT)
+
+#define __IRQ_MASK(x)	((1UL << (x))-1)
+#define PREEMPT_MASK	(__IRQ_MASK(PREEMPT_BITS) << PREEMPT_SHIFT)
+#define HARDIRQ_MASK	(__IRQ_MASK(HARDIRQ_BITS) << HARDIRQ_SHIFT)
+
+#define preempt_count() (current->preempt_count)
+
+#define hardirq_count()	(preepmt_count() & HARDIRQ_MASK)
+
+#define in_atomic_preempt_off() \
+	(preempt_count() != 1)
 
 static inline void preempt_disable(void)
 {
@@ -129,9 +147,15 @@ static inline void preempt_enable(void)
 	current->preempt_count--;
 }
 
-static inline void clear_task_resched(struct task_struct *p)
+static inline void preempt_add(int val)
 {
-	p->need_resched = 0;
+	current->preempt_count += val;
 }
 
-#endif  /* __ASSEMBLY__ */
+static inline void preempt_sub(int val)
+{
+	current->preempt_count -= val;
+}
+
+#define __irq_enter() preempt_add(HARDIRQ_OFFSET)
+#define __irq_exit() preempt_sub(HARDIRQ_OFFSET)

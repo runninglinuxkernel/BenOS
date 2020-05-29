@@ -16,3 +16,5 @@ static inline void arch_local_irq_disable(void)
 		:
 		: "memory");
 }
+
+void arch_irq_handle(void);

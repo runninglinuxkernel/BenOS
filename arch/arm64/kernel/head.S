@@ -1,6 +1,5 @@
 #include <asm/mm.h>
 #include <asm/sysregs.h>
-#include <sched.h>
 
 .section  .rodata
 .align 3

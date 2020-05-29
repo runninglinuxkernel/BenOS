@@ -1,5 +1,5 @@
-#include <sched.h>
 #include <irq.h>
+#include <sched.h>
 #include <printk.h>
 
 static void dequeue_task_simple(struct run_queue *rq,
@@ -69,7 +69,7 @@ repeat:
 
 static void task_tick_simple(struct run_queue *rq, struct task_struct *p)
 {
-	if (--p->counter <= 0 && p->preempt_count <= 0) {
+	if (--p->counter <= 0) {
 		p->counter = 0;
 		p->need_resched = 1;
 		printk("%s, thread (pid %d) need_resched\n", __func__, p->pid);

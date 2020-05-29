@@ -7,6 +7,10 @@
 
 #define LOW_MEMORY (2 * SECTION_SIZE)
 
+/* 暂时使用1个4KB页面来当作内核栈*/
+#define THREAD_SIZE  (1 * PAGE_SIZE)
+#define THREAD_START_SP  (THREAD_SIZE - 8)
+
 #ifndef __ASSEMBLER__
 void memzero(unsigned long src, unsigned long n);
 #endif

@@ -1,5 +1,6 @@
-#include <sched.h>
 #include <irq.h>
+#include <sched.h>
+#include <printk.h>
 
 struct run_queue g_rq;
 
@@ -67,7 +68,9 @@ void tick_handle_periodic(void)
  */
 static void schedule_debug(struct task_struct *p)
 {
-
+	if (in_atomic_preempt_off())
+		printk("BUG: scheduling while atomic: %d, 0x%x\n",
+				p->pid, preempt_count());
 }
 
 void schedule(void)

@@ -1,6 +1,5 @@
 #include <asm/asm-offsets.h>
 #include <asm/mm.h>
-#include <sched.h>
 
 #define BAD_SYNC        0
 #define BAD_IRQ         1

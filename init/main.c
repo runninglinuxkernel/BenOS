@@ -2,8 +2,8 @@
 #include <asm/sysregs.h>
 #include <printk.h>
 #include <irq.h>
-#include <asm/timer.h>
 #include <sched.h>
+#include <asm/timer.h>
 #include <memory.h>
 
 extern char _text_boot[], _etext_boot[];
