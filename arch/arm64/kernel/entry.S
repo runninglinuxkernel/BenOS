@@ -213,6 +213,9 @@ ret_to_user:
 .align 2
 .global ret_from_fork
 ret_from_fork:
+	/* 第一次运行的进程来收拾prev进程
+	   的烂摊子, 比如打开中断等*/
+	bl schedule_tail
 	cbz x19, 1f
 	mov x0, x20
 	blr x19

@@ -42,9 +42,14 @@ void switch_to(struct task_struct *next)
 	cpu_switch_to(prev, next);
 }
 
-static void post_schedule(struct task_struct *prev)
+/*
+ * 处理调度完成后的一些收尾工作，由next进程来收拾
+ * prev进程的烂摊子
+ */
+void schedule_tail(struct task_struct *prev)
 {
-
+	/* 打开中断 */
+	raw_local_irq_enable();
 }
 
 void tick_handle_periodic(void)
@@ -52,6 +57,17 @@ void tick_handle_periodic(void)
 	struct run_queue *rq = &g_rq;
 
 	task_tick(rq, current);
+}
+
+/* 检查是否在中断上下文里发生了调度，这是一个不好
+ * 的习惯。因为中断上下文通常是关中断的，若发生
+ * 调度了，CPU选择了next进程运行，CPU就运行在
+ * next进程中，那么可能长时间处于关中断状态，这样
+ * 时钟tick有可能丢失，导致系统卡住了
+ */
+static void schedule_debug(struct task_struct *p)
+{
+
 }
 
 void schedule(void)
@@ -62,6 +78,12 @@ void schedule(void)
 	prev = current;
 
 	preempt_disable();
+
+	/* 检查是否在中断上下文中发生了调度 */
+	schedule_debug(prev);
+
+	/* 关闭中断包含调度器，以免中断发生影响调度器 */
+	raw_local_irq_disable();
 
 	if (prev->state)
 		dequeue_task(rq, prev);
@@ -74,9 +96,10 @@ void schedule(void)
 		rq->curr = next;
 	}
 
-	preempt_enable();
+	/* 由next进程来收拾prev进程的现场 */
+	schedule_tail(prev);
 
-	post_schedule(prev);
+	preempt_enable();
 }
 
 void preempt_schedule_irq(void)
