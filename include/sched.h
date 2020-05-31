@@ -12,6 +12,7 @@ struct run_queue;
 struct sched_class {
 	const struct sched_class *next;
 
+	void (*task_fork)(struct task_struct *p);
 	void (*enqueue_task)(struct run_queue *rq, struct task_struct *p);
 	void (*dequeue_task)(struct run_queue *rq, struct task_struct *p);
 	void (*task_tick)(struct run_queue *rq, struct task_struct *p);
@@ -72,6 +73,7 @@ union task_union {
 	.flags = PF_KTHREAD,   \
 	.pid = 0,     \
 	.preempt_count = 0, \
+	.need_resched = 0, \
 	.next_task = (struct task_struct *)&task, \
 	.prev_task = (struct task_struct *)&task, \
 }
@@ -116,6 +118,8 @@ static inline void clear_task_resched(struct task_struct *p)
 }
 
 #include <asm/current.h>
+
+#define need_resched() (current->need_resched == 1)
 
 #define PREEMPT_BITS	8
 #define HARDIRQ_BITS	4

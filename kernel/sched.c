@@ -2,6 +2,7 @@
 #include <sched.h>
 #include <printk.h>
 
+/* 定义一个全局的就绪队列*/
 struct run_queue g_rq;
 
 struct task_struct *pick_next_task(struct run_queue *rq,
@@ -46,6 +47,10 @@ void switch_to(struct task_struct *next)
 /*
  * 处理调度完成后的一些收尾工作，由next进程来收拾
  * prev进程的烂摊子
+ *
+ * Note: 新创建进程第一次运行也会调用该函数来处理
+ * prev进程的烂摊子
+ * ret_from_fork->schedule_tail
  */
 void schedule_tail(struct task_struct *prev)
 {
@@ -73,14 +78,12 @@ static void schedule_debug(struct task_struct *p)
 				p->pid, preempt_count());
 }
 
-void schedule(void)
+static void __schedule(void)
 {
 	struct task_struct *prev, *next;
 	struct run_queue *rq = &g_rq;
 
 	prev = current;
-
-	preempt_disable();
 
 	/* 检查是否在中断上下文中发生了调度 */
 	schedule_debug(prev);
@@ -101,15 +104,41 @@ void schedule(void)
 
 	/* 由next进程来收拾prev进程的现场 */
 	schedule_tail(prev);
+}
 
+/* 普通调度 */
+void schedule(void)
+{
+	/* 关闭抢占，以免嵌套发生调度抢占*/
+	preempt_disable();
+	__schedule();
 	preempt_enable();
 }
 
+/* 抢占调度
+ *
+ * 中断返回前会检查是否需要抢占调度
+ */
 void preempt_schedule_irq(void)
 {
+	/* this must be preemptible now*/
+	if (preempt_count())
+		printk("BUG: %s incorrect preempt count: 0x%x\n",
+				__func__, preempt_count());
+
+	/* 关闭抢占，以免嵌套发生调度抢占*/
+	preempt_disable();
+	/*
+	 * 这里打开中断，处理高优先级中断，
+	 * 中断比抢占调度优先级。
+	 *
+	 * 若这里发生中断，中断返回后，前面关闭抢占
+	 * 不会嵌套发生抢占调度
+	 */
 	raw_local_irq_enable();
-	schedule();
+	__schedule();
 	raw_local_irq_disable();
+	preempt_enable();
 }
 
 void wake_up_process(struct task_struct *p)

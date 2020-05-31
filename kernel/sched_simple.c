@@ -74,14 +74,6 @@ static void task_tick_simple(struct run_queue *rq, struct task_struct *p)
 		p->need_resched = 1;
 		printk("%s, thread (pid %d) need_resched\n", __func__, p->pid);
 	}
-
-#if 0
-	if (p->need_resched) {
-		raw_local_irq_disable();
-		schedule();
-		raw_local_irq_enable();
-	}
-#endif
 }
 
 const struct sched_class simple_sched_class = {
