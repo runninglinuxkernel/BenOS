@@ -29,11 +29,9 @@ static void reset_score(void)
 {
 	struct task_struct *p;
 
-	printk("%s\n", __func__);
-
 	for_each_task(p) {
 		p->counter = DEF_COUNTER + p->priority;
-		printk("%s, pid=%d, count=%d\n", __func__, p->pid, p->counter);
+		//printk("%s, pid=%d, count=%d\n", __func__, p->pid, p->counter);
 	}
 }
 
@@ -62,7 +60,7 @@ repeat:
 		goto repeat;
 	}
 
-	printk("%s: pick next thread (pid %d)\n", __func__, next->pid);
+	//printk("%s: pick next thread (pid %d)\n", __func__, next->pid);
 
 	return next;
 }
@@ -72,7 +70,7 @@ static void task_tick_simple(struct run_queue *rq, struct task_struct *p)
 	if (--p->counter <= 0) {
 		p->counter = 0;
 		p->need_resched = 1;
-		printk("%s, thread (pid %d) need_resched\n", __func__, p->pid);
+		printk("pid %d need_resched\n", p->pid);
 	}
 }
 

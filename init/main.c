@@ -41,7 +41,7 @@ static void delay(int n)
 void kernel_thread1(void)
 {
 	while (1) {
-		delay(4000000);
+		delay(80000);
 		printk("%s: %s\n", __func__, "12345");
 	}
 }
@@ -49,7 +49,7 @@ void kernel_thread1(void)
 void kernel_thread2(void)
 {
 	while (1) {
-		delay(2000000);
+		delay(50000);
 		printk("%s: %s\n", __func__, "abcde");
 	}
 }
@@ -96,9 +96,6 @@ void kernel_main(void)
 
 	printk("%u, %d, %x\n", 1024, -2, -2);
 
-	timer_init();
-	raw_local_irq_enable();
-
 	int pid;
 
 	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread1, 0);
@@ -108,6 +105,9 @@ void kernel_main(void)
 	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread2, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
+
+	timer_init();
+	raw_local_irq_enable();
 
 	while (1)
 		;
