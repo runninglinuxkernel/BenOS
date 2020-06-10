@@ -91,3 +91,4 @@ config HZ
 
 #source "kernel/Kconfig"
 source "init/Kconfig"
+source "drivers/Kconfig"

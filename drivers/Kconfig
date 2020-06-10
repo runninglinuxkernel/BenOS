@@ -1,0 +1,5 @@
+menu "Device Drivers"
+
+source "drivers/irqchip/Kconfig"
+
+endmenu

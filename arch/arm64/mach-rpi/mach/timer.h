@@ -32,4 +32,3 @@
 #define TIMER_FLAG    (PERIPHERAL_BASE+0x38)
 
 void timer_init(void);
-void handle_timer_irq(void);

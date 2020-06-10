@@ -1,3 +1,4 @@
+#include "mach/base.h"
 #include <mach/timer.h>
 #include <mach/irq.h>
 #include <asm/io.h>
@@ -6,6 +7,7 @@
 #include <timer.h>
 #include <asm/sysregs.h>
 #include <sched.h>
+#include <irq.h>
 
 static unsigned int arch_timer_rate;
 
@@ -47,24 +49,28 @@ static unsigned int generic_timer_get_freq(void)
 
 static void enable_timer_interrupt(void)
 {
-	writel(CNT_PNS_IRQ, TIMER_CNTRL0);
+	writel(CNT_PNS_IRQ, ARM_LOCAL_BASE + TIMER_CNTRL0);
+}
+
+int handle_timer_irq(int irq, void *param)
+{
+	//printk("Core0 Timer interrupt received\r\n");
+	generic_timer_reset(arch_timer_rate);
+	tick_handle_periodic();
+
+	return 0;
 }
 
 void timer_init(void)
 {
 	arch_timer_rate = generic_timer_get_freq();
-	//printk("cntp freq:0x%x\r\n", arch_timer_rate);
+	printk("cntp freq:0x%x\r\n", arch_timer_rate);
 	arch_timer_rate /= HZ;
 
 	generic_timer_init();
 	generic_timer_reset(arch_timer_rate);
 
-	enable_timer_interrupt();
-}
+	request_irq(GENERIC_TIMER_IRQ, handle_timer_irq, "core timer", NULL);
 
-void handle_timer_irq(void)
-{
-	//printk("Core0 Timer interrupt received\r\n");
-	generic_timer_reset(arch_timer_rate);
-	tick_handle_periodic();
+	enable_timer_interrupt();
 }

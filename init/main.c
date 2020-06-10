@@ -5,6 +5,7 @@
 #include <sched.h>
 #include <asm/timer.h>
 #include <memory.h>
+#include <asm/init.h>
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
@@ -65,6 +66,8 @@ void kernel_main(void)
 	printk("running on EL:");
 	el = read_sysreg(CurrentEL) >> 2;
 	printk("%d\n", el);
+
+	setup_arch();
 
 	/* init mm */
 	mem_init((unsigned long)_ebss, TOTAL_MEMORY);

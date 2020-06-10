@@ -1,0 +1,23 @@
+menu "Interrupt Controller"
+
+config IRQCHIP
+	def_bool y
+
+choice
+	prompt "interrupt chip for PI"
+	default ARM_GICV2
+	help
+		ARM GIC V2 interrupt controller.
+
+config ARM_GICV2
+	bool "ARM GIC V2"
+	depends on IRQCHIP
+	depends on BOARD_PI4B
+
+config PI_LEGACY_INTERRUPT
+	bool "Legacy interrupt controller for PI"
+	depends on IRQCHIP
+	depends on BOARD_PI4B || BOARD_PI3B
+
+endchoice
+endmenu

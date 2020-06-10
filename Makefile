@@ -250,7 +250,7 @@ scripts: scripts_basic include/config/auto.conf
 # Objects we will link into kernel / subdirs we need to visit
 init-y		:= init/
 libs-y		:= lib/
-#drivers-y	:= drivers/
+drivers-y	:= drivers/
 core-y		:= kernel/
 core-y          += mm/
 
