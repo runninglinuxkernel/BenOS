@@ -7,6 +7,17 @@
 #define BAD_ERROR       3
 
 /*
+ * Enable and disable interrupts.
+ */
+	.macro	disable_irq
+	msr	daifset, #2
+	.endm
+
+	.macro	enable_irq
+	msr	daifclr, #2
+	.endm
+
+/*
    vector table entry
    每个表项是128字节， align 7表示128字节对齐
  */
@@ -58,8 +69,12 @@
 	stp x26, x27, [sp, #16 *13]
 	stp x28, x29, [sp, #16 *14]
 
+	.if \el == 0
+	mrs x21, sp_el0
+	.else
 	/* x21: 栈顶 的位置*/
 	add     x21, sp, #S_FRAME_SIZE
+	.endif
 
 	mrs     x22, elr_el1
 	mrs     x23, spsr_el1
@@ -79,6 +94,12 @@
 	   从pt_regs->pstate中恢复spsr_el1
 	 */
 	ldp     x21, x22, [sp, #S_PC]           // load ELR, SPSR
+
+	.if \el == 0
+	ldr x23, [sp, #S_SP]
+	msr sp_el0, x23
+	.endif
+
 	msr     elr_el1, x21                    // set up the return data
 	msr     spsr_el1, x22
 
@@ -140,7 +161,7 @@ vectors:
 	   在用户态的aarch64的程序发生了异常
 	 */
 	vtentry el0_sync_invalid
-	vtentry el0_irq_invalid
+	vtentry el0_irq
 	vtentry el0_fiq_invalid
 	vtentry el0_error_invalid
 
@@ -176,6 +197,12 @@ tsk     .req    x28             // current thread_info
 	and     \rd, \rd, #~(THREAD_SIZE - 1)   // top of stack
 	.endm
 
+.align 3
+el0_irq:
+	kernel_entry 0
+	bl irq_handle
+	b ret_to_user
+
 .align 2
 el1_irq:
 	kernel_entry 1
@@ -201,7 +228,18 @@ el1_preempt:
 .align 2
 .global ret_to_user
 ret_to_user:
-	inv_entry 0, BAD_ERROR
+	disable_irq
+
+	/* check if need schedule */
+	get_thread_info tsk
+	ldr  w24, [tsk, #NEED_RESCHED]
+	cbnz w24, need_sched
+no_work_pending:
+	kernel_exit 0
+
+need_sched:
+	bl schedule
+
 
 /*
  进程fork之后第一次进程切换

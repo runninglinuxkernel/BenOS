@@ -81,4 +81,3 @@ const struct sched_class simple_sched_class = {
 	.task_tick = task_tick_simple,
 	.pick_next_task = pick_next_task_simple,
 };
-

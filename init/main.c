@@ -55,6 +55,22 @@ void kernel_thread2(void)
 	}
 }
 
+void run_user_thread(void)
+{
+	while (1) {
+		delay(50000);
+		printk("%s: runing at userspace\n", __func__);
+	}
+}
+
+void user_thread(void)
+{
+	printk("%s: running at EL%d\n", __func__, read_sysreg(CurrentEL) >> 2);
+
+	if (move_to_user_space((unsigned long)&run_user_thread))
+		printk("error move_to_user_space\n");
+}
+
 void kernel_main(void)
 {
 	int el;
@@ -106,6 +122,10 @@ void kernel_main(void)
 		printk("create thread fail\n");
 
 	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread2, 0);
+	if (pid < 0)
+		printk("create thread fail\n");
+
+	pid = do_fork(PF_KTHREAD, (unsigned long)&user_thread, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 
