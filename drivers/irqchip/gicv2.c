@@ -205,7 +205,7 @@ int gic_init(int chip, unsigned long dist_base, unsigned long cpu_base)
 	gic->domain = irq_domain_add(virq_base, HW_IRQ_START,
 			gic_irqs, &gicv2_irq_domain_ops, gic);
 	if (!gic->domain)
-		return -1;
+		return -EINVAL;
 
 	printk("%s: cpu_base:0x%x, dist_base:0x%x, gic_irqs:%d\n",
 			__func__, cpu_base, dist_base, gic->gic_irqs);

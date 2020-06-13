@@ -74,9 +74,9 @@ int request_irq(unsigned int irq, irq_handler_t handler,
 
 	desc = irq_to_desc(irq);
 	if (!desc)
-		return -1;
+		return -EINVAL;
 	if (!handler)
-		return -1;
+		return -EINVAL;
 
 	desc->handler = handler;
 	desc->param = param;
@@ -101,7 +101,7 @@ int generic_handle_irq(unsigned int virq)
 	int ret;
 
 	if (!desc || !desc->handler)
-		return -1;
+		return -EINVAL;
 
 	ret = desc->handler(virq, desc->param);
 
@@ -154,7 +154,7 @@ int irq_domain_set_hwirq_chip(struct irq_domain *domain, unsigned int virq,
 	struct irq_desc *desc = irq_to_desc(virq);
 
 	if (!desc)
-		return -1;
+		return -EINVAL;
 
 	desc->hwirq = hwirq;
 	desc->chip = chip;

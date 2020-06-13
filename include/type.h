@@ -1,5 +1,6 @@
 #ifndef _BENOS_TYPE_H
 #define _LINUX_TYPE_H
+#include <errorno.h>
 
 #define SZ_1K				0x00000400
 #define SZ_4K				0x00001000

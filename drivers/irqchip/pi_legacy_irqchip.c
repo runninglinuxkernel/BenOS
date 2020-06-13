@@ -152,7 +152,7 @@ int pi_irq_init(unsigned long armc_base, unsigned long arm_local_base)
 	pi->domain = irq_domain_add(virq_base, 0, pi->irqs,
 			&pi_irq_domain_ops, pi);
 	if (!pi->domain)
-		return -1;
+		return -EINVAL;
 
 	printk("%s: armc_base:0x%x, arm_local:0x%x, irqs:%d, virq:%d\n",
 			__func__, armc_base, arm_local_base,

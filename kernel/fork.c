@@ -1,6 +1,7 @@
 #include <sched.h>
 #include <string.h>
 #include <memory.h>
+#include <type.h>
 
 /* 把0号进程的内核栈 编译链接到.data.init_task段中 */
 #define __init_task_data __attribute__((__section__(".data.init_task")))
@@ -23,7 +24,12 @@ static int find_empty_task(void)
 			return i;
 	}
 
-	return -1;
+	return -EINVAL;
+}
+
+static void free_task(struct task_struct *p)
+{
+	p = NULL;
 }
 
 /*
@@ -90,10 +96,10 @@ int do_fork(unsigned long clone_flags, unsigned long stack, unsigned long arg)
 
 	pid = find_empty_task();
 	if (pid < 0)
-		goto error;
+		goto free_page;
 
 	if (copy_thread(clone_flags, p, stack, arg))
-		goto error;
+		goto free_task;
 
 	p->state = TASK_RUNNING;
 	p->pid = pid;
@@ -109,8 +115,12 @@ int do_fork(unsigned long clone_flags, unsigned long stack, unsigned long arg)
 
 	return pid;
 
+free_task:
+	free_task(p);
+free_page:
+	free_page((unsigned long)p);
 error:
-	return -1;
+	return -ENOMEM;
 }
 
 static void start_user_thread(struct pt_regs *regs, unsigned long pc,
@@ -131,7 +141,7 @@ int move_to_user_space(unsigned long pc)
 
 	stack = get_free_page();
 	if (!stack)
-		return -1;
+		return -ENOMEM;
 
 	start_user_thread(regs, pc, stack + PAGE_SIZE);
 
