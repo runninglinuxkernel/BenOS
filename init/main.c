@@ -39,20 +39,24 @@ static void delay(int n)
 		;
 }
 
-void kernel_thread1(void)
+int kernel_thread1(void *arg)
 {
 	while (1) {
 		delay(80000);
 		printk("%s: %s\n", __func__, "12345");
 	}
+
+	return 0;
 }
 
-void kernel_thread2(void)
+int kernel_thread2(void *arg)
 {
 	while (1) {
 		delay(50000);
 		printk("%s: %s\n", __func__, "abcde");
 	}
+
+	return 0;
 }
 
 void run_user_thread(void)
@@ -63,12 +67,14 @@ void run_user_thread(void)
 	}
 }
 
-void user_thread(void)
+int user_thread(void *arg)
 {
 	printk("%s: running at EL%d\n", __func__, read_sysreg(CurrentEL) >> 2);
 
 	if (move_to_user_space((unsigned long)&run_user_thread))
 		printk("error move_to_user_space\n");
+
+	return 0;
 }
 
 void kernel_main(void)
@@ -117,15 +123,15 @@ void kernel_main(void)
 
 	int pid;
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread1, 0);
+	pid = kernel_thread(kernel_thread1, 0, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread2, 0);
+	pid = kernel_thread(kernel_thread2, 0, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&user_thread, 0);
+	pid = kernel_thread(user_thread, 0, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 

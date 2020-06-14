@@ -48,7 +48,7 @@ static struct pt_regs *task_pt_regs(struct task_struct *tsk)
  * 设置子进程的上下文信息
  */
 static int copy_thread(unsigned long clone_flags, struct task_struct *p,
-		unsigned long stack, unsigned long arg)
+		unsigned long stack, unsigned long stack_sz)
 {
 	struct pt_regs *childregs;
 
@@ -59,7 +59,7 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 	if (clone_flags & PF_KTHREAD) {
 		childregs->pstate = PSR_MODE_EL1h;
 		p->cpu_context.x19 = stack;
-		p->cpu_context.x20 = arg;
+		p->cpu_context.x20 = stack_sz;
 	} else {
 		*childregs = *task_pt_regs(current);
 		childregs->regs[0] = 0;
@@ -83,7 +83,7 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
  * 2. 分配PID
  * 3. 设置进程的上下文
  */
-int do_fork(unsigned long clone_flags, unsigned long stack, unsigned long arg)
+int do_fork(unsigned long clone_flags, unsigned long stack, unsigned long stack_sz)
 {
 	struct task_struct *p;
 	int pid;
@@ -98,7 +98,7 @@ int do_fork(unsigned long clone_flags, unsigned long stack, unsigned long arg)
 	if (pid < 0)
 		goto free_page;
 
-	if (copy_thread(clone_flags, p, stack, arg))
+	if (copy_thread(clone_flags, p, stack, stack_sz))
 		goto free_task;
 
 	p->state = TASK_RUNNING;
@@ -121,6 +121,12 @@ free_page:
 	free_page((unsigned long)p);
 error:
 	return -ENOMEM;
+}
+
+int kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
+{
+	return do_fork(flags | PF_KTHREAD, (unsigned long)fn,
+			(unsigned long)arg);
 }
 
 static void start_user_thread(struct pt_regs *regs, unsigned long pc,
