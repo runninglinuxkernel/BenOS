@@ -3,10 +3,57 @@
 
 #define KSYM_NAME_LEN 128
 
+/*
+ *
+ * 编译kallsyms过程, 由如下步骤：
+ * 1） 先link一个.tmp_vmbenos1
+ * 2） 读符号表，导出汇编文件：
+ *     aarch64-linux-gnu-nm -n .tmp_vmbenos1 |
+ *                          scripts/kallsyms > .tmp_kallsyms1.S
+ *
+ * 3)  编译汇编文件：
+ *     aarch64-linux-gnu-gcc .tmp_kallsyms1.S -o .tmp_kallsyms1.o
+ *
+ * 4)  加上.tmp_kallsyms1.o，重新link一个新的.tmp_vmbenos2
+ *     这个新的vmbenos包含了kallsyms本身的符号表
+ * 5） 再导出一次汇编文件：
+ *     aarch64-linux-gnu-nm -n .tmp_vmbenos2 |
+ *                           scripts/kallsyms > .tmp_kallsyms2.S
+ *
+ * 6） 编译汇编文件：
+ *     aarch64-linux-gnu-gcc .tmp_kallsyms2.S -o .tmp_kallsyms2.o
+ *
+ * 7） 最后，加上.tmp_kallsyms2.o来link成最终的benos。
+ *
+ * kallsyms表的查表过程。
+ *
+ * 1. 通过addr来查找kallsyms_addresses表，找到addr属于哪个函数的地址范围,
+ *    从而得到addr对应该表的index。
+ *    kallsyms_addresses表用来存储 每个函数在代码段的起始地址和结束地址。
+ *
+ * 2. kallsyms_names是用来存储信息的另外一个表。
+ *    kallsyms_addresses表的每个表项， 在kallsyms_names对应的存储格式为：
+ *
+ *              [长度][内容]
+ *
+ *  由步骤1得到了index，从而可以找到该index在kallsyms_names的存储内容。
+ *  由get_symbol_offset()函数来实现
+ *
+ *  3. kallsyms_names存储的内容，用来查询另外一个表kallsyms_token_index，
+ *     kallsyms_token_index表里存储了另外一个表kallsyms_token_table的偏移。
+ *     kallsyms_token_table表里存储了常用的函数名。
+ */
+
+/* symbol 和地址 对应的表 */
 extern unsigned long kallsyms_addresses[] __attribute__((weak));
+
+/* 有多少个symbol的表项 */
 extern unsigned int kallsyms_num_syms __attribute__((weak));
+
+/* 用来存储地址对应的函数名 */
 extern u8 kallsyms_names[] __attribute__((weak));
 
+/* 查表,类似一张自定义的ASCII码表 */
 extern u8 kallsyms_token_table[] __attribute__((weak));
 extern u16 kallsyms_token_index[] __attribute__((weak));
 
