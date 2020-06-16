@@ -27,6 +27,9 @@
 #define _BITUL(x)	(_UL(1) << (x))
 #define _BITULL(x)	(_ULL(1) << (x))
 
+#define __ALIGN_MASK(x, mask)	(((x) + (mask)) & ~(mask))
+#define ALIGN(x, a) __ALIGN_MASK(x, (typeof(x))(a) - 1)
+
 #ifndef __ASSEMBLY__
 typedef char s8;
 typedef unsigned char u8;

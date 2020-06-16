@@ -137,6 +137,7 @@ SYMLINK		:= ln -fsn
 AWK		= awk
 PERL		= perl
 CHECK		= sparse
+KALLSYMS	= scripts/basic/kallsyms
 
 CHECKFLAGS     := -D__STDC__ $(CF)
 CFLAGS_KERNEL	=
@@ -153,7 +154,7 @@ export UTS_MACHINE HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
 
 export CPPFLAGS NOSTDINC_FLAGS TARGETINCLUDE OBJCOPYFLAGS LDFLAGS
 export CFLAGS CFLAGS_KERNEL
-export AFLAGS AFLAGS_KERNEL
+export AFLAGS AFLAGS_KERNEL KALLSYMS
 
 # Files to ignore in find ... statements
 
@@ -291,11 +292,7 @@ ifdef CONFIG_CC_OPT_SPEED
 CFLAGS		+= -O2
 endif
 
-ifdef CONFIG_FRAME_POINTER
 CFLAGS		+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
-else
-CFLAGS		+= -fomit-frame-pointer
-endif
 
 ifdef CONFIG_CC_GEN_DEBUG
 CFLAGS		+= -g
@@ -376,20 +373,36 @@ quiet_cmd_benos_version = GEN     .version
 	$(MAKE) $(build)=init
 
 # The finally linked kernel.
-quiet_cmd_benos = LD      $@
-      cmd_benos = $(LD) $(LDFLAGS) $(LDFLAGS_benos) -o $@ \
+quiet_cmd_link_vmbenos = LD      $@
+      cmd_link_vmbenos = $(LD) $(LDFLAGS) $(LDFLAGS_benos) -o $@ \
 	-T $(benos-lds) -Map $(benos-map) $(benos-init) \
 	--start-group $(benos-main) --end-group \
 	$(filter-out $(benos-lds) $(benos-init) $(benos-main) FORCE ,$^)
-define rule_benos
-	:
-	+$(call cmd,benos)
-	$(Q)echo 'cmd_$@ := $(cmd_benos)' > $(dot-target).cmd
-endef
+
+# build the kallsyms
+
+kallsyms.o := .tmp_kallsyms2.o
+
+quiet_cmd_kallsyms = KSYM    $@
+      cmd_kallsyms = $(NM) -n $< | $(KALLSYMS) > $@
+
+# .tmp_vmlinux1 must be complete except kallsyms, so update vmlinux version
+.tmp_vmbenos1: $(benos-lds) $(benos-all) FORCE
+	$(call cmd,link_vmbenos)
+.tmp_vmbenos2: $(benos-lds) $(benos-all) .tmp_kallsyms1.o FORCE
+	$(call if_changed,link_vmbenos)
+
+.tmp_kallsyms1.o .tmp_kallsyms2.o: %.o: %.S FORCE
+	$(call if_changed_dep,as_o_S)
+
+.tmp_kallsyms1.S: .tmp_vmbenos1 $(KALLSYMS)
+	$(call cmd,kallsyms)
+.tmp_kallsyms2.S: .tmp_vmbenos2 $(KALLSYMS)
+	$(call cmd,kallsyms)
 
 # kernel image - including updated kernel symbols
-benos: $(benos-lds) $(benos-init) $(benos-main) FORCE
-	$(call if_changed_rule,benos)
+benos: $(benos-lds) $(benos-init) $(benos-main) $(kallsyms.o) FORCE
+	$(call cmd,link_vmbenos)
 	$(Q)rm -f .old_version
 
 # The actual objects are generated when descending,
@@ -517,7 +530,7 @@ include/target/utsrelease.h: include/config/kernel.release FORCE
 
 # Directories & files removed with 'make clean'
 CLEAN_FILES +=	benos benos.strip benos.map \
-                .tmp_version .tmp_benos* .tmp_benos.map
+                .tmp_version .tmp_benos* .tmp_benos.map .tmp*
 CLEAN_DIRS += include/asm
 
 # Directories & files removed with 'make mrproper'

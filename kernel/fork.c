@@ -2,6 +2,7 @@
 #include <string.h>
 #include <memory.h>
 #include <type.h>
+#include <asm/stacktrace.h>
 
 /* 把0号进程的内核栈 编译链接到.data.init_task段中 */
 #define __init_task_data __attribute__((__section__(".data.init_task")))
@@ -136,6 +137,8 @@ static void start_user_thread(struct pt_regs *regs, unsigned long pc,
 	regs->pc = pc;
 	regs->pstate = PSR_MODE_EL0t;
 	regs->sp = sp;
+
+	dump_backtrace(NULL, current);
 }
 
 int move_to_user_space(unsigned long pc)
