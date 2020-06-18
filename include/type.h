@@ -1,5 +1,5 @@
 #ifndef _BENOS_TYPE_H
-#define _LINUX_TYPE_H
+#define _BENOS_TYPE_H
 
 #ifdef __ASSEMBLY__
 #define _AC(X,Y)	X
