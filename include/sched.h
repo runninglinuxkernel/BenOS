@@ -9,7 +9,6 @@
 #include <asm/system.h>
 #include <mm.h>
 #include <asm/processor.h>
-#include <list.h>
 #include <timer.h>
 
 enum task_state {
