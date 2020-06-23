@@ -2,6 +2,7 @@
 #include <asm/esr.h>
 #include <sched.h>
 #include <asm/stacktrace.h>
+#include <asm/sysregs.h>
 
 static const char * const bad_mode_handler[] = {
 	"Sync Abort",
@@ -127,12 +128,12 @@ void dump_backtrace(struct pt_regs *regs, struct task_struct *p)
 
 void bad_mode(struct pt_regs *regs, int reason, unsigned int esr)
 {
-	printk("Bad mode for %s handler detected, esr:0x%x  - %s\n",
-			bad_mode_handler[reason], esr,
-			esr_get_class_string(esr));
+	printk("Bad mode for %s handler detected, far:0x%x esr:0x%x  - %s\n",
+			bad_mode_handler[reason], read_sysreg(far_el1),
+			esr, esr_get_class_string(esr));
 
-	dump_backtrace(regs, current);
+	show_regs(regs);
 
-	while (1)
-		;
+	panic("bad mode");
+
 }

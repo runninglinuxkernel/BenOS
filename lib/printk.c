@@ -125,7 +125,7 @@ static char *number(char *str, u64 num, int base, int size, int precision
  *  l : long, unsigned long, long int
  *  ll: long long, unsigned long long
  */
-static int myprintf(char *string, unsigned int size,
+int myprintf(char *string, unsigned int size,
 		const char *fmt, va_list arg)
 {
 	char *pos;
