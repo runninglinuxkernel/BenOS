@@ -137,8 +137,6 @@ static void start_user_thread(struct pt_regs *regs, unsigned long pc,
 	regs->pc = pc;
 	regs->pstate = PSR_MODE_EL0t;
 	regs->sp = sp;
-
-	dump_backtrace(NULL, current);
 }
 
 int move_to_user_space(unsigned long pc)

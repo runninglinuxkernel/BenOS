@@ -6,6 +6,7 @@
 #include <asm/timer.h>
 #include <memory.h>
 #include <asm/init.h>
+#include "../usr/syscall.h"
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
@@ -42,7 +43,7 @@ static void delay(int n)
 int kernel_thread1(void *arg)
 {
 	while (1) {
-		delay(80000);
+		delay(800000);
 		printk("%s: %s\n", __func__, "12345");
 	}
 
@@ -52,18 +53,48 @@ int kernel_thread1(void *arg)
 int kernel_thread2(void *arg)
 {
 	while (1) {
-		delay(50000);
+		delay(500000);
 		printk("%s: %s\n", __func__, "abcde");
 	}
 
 	return 0;
 }
 
+int run_new_user_thread(void *arg)
+{
+	unsigned long sp;
+
+	while (1) {
+		delay(500000);
+		asm("mov %0, sp" : "=r" (sp) : : "cc");
+		printk("%s: 0x%x\n", __func__, sp);
+	}
+
+	return 0;
+
+}
+
 void run_user_thread(void)
 {
+	unsigned long child_stack;
+	int ret;
+	unsigned long sp;
+
+	child_stack = malloc();
+	if (child_stack < 0)
+		printk("cannot allocate memory\n");
+
+	printk("child_stack 0x%x\n", child_stack);
+
+	ret = clone(&run_new_user_thread,
+			(void *)(child_stack + PAGE_SIZE), 0, NULL);
+	if (ret < 0)
+		printk("error while clone\n");
+
 	while (1) {
-		delay(50000);
-		printk("%s: runing at userspace\n", __func__);
+		asm("mov %0, sp" : "=r" (sp) : : "cc");
+		delay(5000000);
+		printk("%s: 0x%x\n", __func__, sp);
 	}
 }
 

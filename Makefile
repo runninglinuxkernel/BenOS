@@ -254,6 +254,7 @@ libs-y		:= lib/
 drivers-y	:= drivers/
 core-y		:= kernel/
 core-y          += mm/
+core-y          += usr/
 
 ifeq ($(dot-config),1)
 # Read in config

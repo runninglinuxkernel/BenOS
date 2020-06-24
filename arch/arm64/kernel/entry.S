@@ -1,5 +1,6 @@
 #include <asm/asm-offsets.h>
 #include <asm/mm.h>
+#include <asm/esr.h>
 
 #define BAD_SYNC        0
 #define BAD_IRQ         1
@@ -160,7 +161,7 @@ vectors:
 	/* Lower EL using AArch64
 	   在用户态的aarch64的程序发生了异常
 	 */
-	vtentry el0_sync_invalid
+	vtentry el0_sync
 	vtentry el0_irq
 	vtentry el0_fiq_invalid
 	vtentry el0_error_invalid
@@ -201,6 +202,19 @@ tsk     .req    x28             // current thread_info
 el0_irq:
 	kernel_entry 0
 	bl irq_handle
+	b ret_to_user
+
+el0_sync:
+	kernel_entry 0
+	mrs  x25, esr_el1
+	lsr     x24, x25, #ESR_ELx_EC_SHIFT     // exception class
+	cmp     x24, #ESR_ELx_EC_SVC64          // SVC in 64-bit state
+	b.eq    el0_svc
+
+el0_svc:
+	/* sp point to pt_regs */
+	mov x0, sp
+	bl el0_svc_handler
 	b ret_to_user
 
 .align 2

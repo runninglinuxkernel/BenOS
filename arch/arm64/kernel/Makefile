@@ -2,7 +2,7 @@
 # Makefile for the BenOS
 #
 
-arm64-obj-y		:= mm.o entry.o traps.o irq.o init.o
+arm64-obj-y		:= mm.o entry.o traps.o irq.o init.o syscall.o
 
 obj-y   += $(arm64-obj-y)
 obj-m   += $(arm64-obj-m)
