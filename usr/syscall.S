@@ -42,6 +42,21 @@ __clone:
 	mov     x8, #__NR_clone
 	svc     0x0
 
+	/*
+	  1. 父进程返回时，返回值为 子进程（线程）的pid
+	  2. 而子进程返回时， 返回值为0.
+	  由于子进程在do_fork期间，直接 把 父进程的
+	  pt_regs栈框拷贝过来的, 因此把pt_regs->pc和
+	  pt_regs->pstate也拷贝了父进程的， 所以当子进程
+	  从内核态返回到用户空间时, 它也是返回到 这里。
+
+	  子进程返回路径：
+	  调度器选择子进程 ->
+	      进程切换到子进程->
+		    ret_from_fork->
+		       ret_to_usr->
+		               返回到此
+	 */
 	cmp     x0, #0
 	beq     thread_start
 	ret

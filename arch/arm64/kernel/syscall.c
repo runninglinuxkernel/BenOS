@@ -3,7 +3,7 @@
 #include <memory.h>
 #include <fs.h>
 
-long sys_ni_syscall(struct pt_regs *regs)
+static long sys_ni_syscall(struct pt_regs *regs)
 {
 	return -ENOSYS;
 }
@@ -24,7 +24,7 @@ static void invoke_syscall(struct pt_regs *regs, int syscall_no,
 	regs->regs[0] = ret;
 }
 
-void el0_syscall_common(struct pt_regs *regs, int syscall_no,
+static void el0_syscall_common(struct pt_regs *regs, int syscall_no,
 		int syscall_nr, const syscall_fn_t syscall_table[])
 {
 	regs->orig_x0 = regs->regs[0];
@@ -33,6 +33,10 @@ void el0_syscall_common(struct pt_regs *regs, int syscall_no,
 	invoke_syscall(regs, syscall_no, syscall_nr, syscall_table);
 }
 
+/*
+ * 处理系统调用
+ * 参数： struct pt_regs *
+ */
 void el0_svc_handler(struct pt_regs *regs)
 {
 	return el0_syscall_common(regs, regs->regs[8],
@@ -85,6 +89,10 @@ long __arm64_sys_malloc(struct pt_regs *regs)
 
 #define __SYSCALL(nr, sym) [nr] = (syscall_fn_t)__arm64_##sym,
 
+/*
+ * 创建一个系统调用表syscall_table
+ * 每个表项是一个函数指针syscall_fn_t
+ */
 const syscall_fn_t syscall_table[__NR_syscalls] = {
 	__SYSCALL(__NR_open, sys_open)
 	__SYSCALL(__NR_close, sys_close)

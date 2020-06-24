@@ -212,7 +212,10 @@ el0_sync:
 	b.eq    el0_svc
 
 el0_svc:
-	/* sp point to pt_regs */
+	/* 通过kernel_entry保存完现场
+	   （中断现场或者异常现场）后
+	   此时sp指向pt_regs
+	 */
 	mov x0, sp
 	bl el0_svc_handler
 	b ret_to_user
@@ -237,14 +240,14 @@ el1_preempt:
 	ret     x24
 
 /*
-   对于用户进程，暂时还没实现
+   返回用户空间
  */
 .align 2
 .global ret_to_user
 ret_to_user:
 	disable_irq
 
-	/* check if need schedule */
+	/* 返回用户空间前夕，检查是否需要调度 */
 	get_thread_info tsk
 	ldr  w24, [tsk, #NEED_RESCHED]
 	cbnz w24, need_sched

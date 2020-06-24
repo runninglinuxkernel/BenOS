@@ -54,7 +54,9 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 	struct pt_regs *childregs;
 
 	childregs = task_pt_regs(p);
+	/* 把子进程的pt_regs栈框清0 */
 	memset(childregs, 0, sizeof(struct pt_regs));
+	/* 把子进程的保存进程上下文的cpu_context清0 */
 	memset(&p->cpu_context, 0, sizeof(struct cpu_context));
 
 	if (clone_flags & PF_KTHREAD) {
@@ -62,7 +64,18 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 		p->cpu_context.x19 = stack;
 		p->cpu_context.x20 = stack_sz;
 	} else {
+		/* 对于fork用户进程,这里让子进程拷贝父进程的
+		 * pt_regs栈框, 这样子进程的pt_regs->pc和
+		 * pt_regs->pstate也拷贝了父进程的, 所以
+		 * 当子进程从内核态返回到用户空间时,子进程也
+		 * 会返回到父进程一样的地方，因为pc是
+		 * 拷贝父进程的
+		 */
 		*childregs = *task_pt_regs(current);
+		/*
+		 * 这里设置子进程的返回值为0,
+		 * 而父进程返回值为子进程的pid
+		 */
 		childregs->regs[0] = 0;
 		if (stack) {
 			if (stack & 15)
@@ -71,7 +84,13 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 		}
 	}
 
+	/* 新创建的进程不管是用户进程还是内核进程
+	 * 第一次运行都要从ret_from_fork开始执行
+	 */
 	p->cpu_context.pc = (unsigned long)ret_from_fork;
+	/*
+	 * 栈顶 指向pt_regs
+	 */
 	p->cpu_context.sp = (unsigned long)childregs;
 
 	return 0;
