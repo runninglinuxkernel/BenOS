@@ -34,14 +34,13 @@ void task_tick(struct run_queue *rq, struct task_struct *p)
 	return class->task_tick(rq, p);
 }
 
-void switch_to(struct task_struct *next)
+struct task_struct * switch_to(struct task_struct *prev,
+		struct task_struct *next)
 {
-	struct task_struct *prev = current;
-
 	if (prev == next)
-		return;
+		return NULL;
 
-	cpu_switch_to(prev, next);
+	return cpu_switch_to(prev, next);
 }
 
 /*
@@ -80,7 +79,7 @@ static void schedule_debug(struct task_struct *p)
 
 static void __schedule(void)
 {
-	struct task_struct *prev, *next;
+	struct task_struct *prev, *next, *last;
 	struct run_queue *rq = &g_rq;
 
 	prev = current;
@@ -97,13 +96,24 @@ static void __schedule(void)
 	next = pick_next_task(rq, prev);
 	clear_task_resched(prev);
 	if (next != prev) {
-		switch_to(next);
+		last = switch_to(prev, next);
+		/*
+		 * switch_to函数是用来切换prev进程到next进程。
+		 * switch_to函数执行完成之后，已经切换到next
+		 * 进程,整个栈和时空都发生变化了,不能使用这
+		 * 里的prev变量来表示prev进程，只能通过aarch64
+		 * 的x0寄存器来获取prev进程的task_struct。
+		 *
+		 * 在switch_to函数使用x0寄存器来传递prev进程
+		 * task_struct,返回值也是通过x0寄存器，因此
+		 * 这里last变量表示prev进程的task_struct
+		 */
 		rq->nr_switches++;
-		rq->curr = next;
+		rq->curr = current;
 	}
 
 	/* 由next进程来收拾prev进程的现场 */
-	schedule_tail(prev);
+	schedule_tail(last);
 }
 
 /* 普通调度 */
