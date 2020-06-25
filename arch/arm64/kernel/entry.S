@@ -239,7 +239,8 @@ no_work_pending:
 
 need_sched:
 	bl schedule
-
+	/* 返回用户空间 */
+	b no_work_pending
 
 /*
  进程fork之后第一次进程切换
