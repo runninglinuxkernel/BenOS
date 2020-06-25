@@ -169,6 +169,8 @@ int move_to_user_space(unsigned long pc)
 	if (!stack)
 		return -ENOMEM;
 
+	memset((void *)stack, 0, PAGE_SIZE);
+
 	start_user_thread(regs, pc, stack + PAGE_SIZE);
 
 	return 0;
