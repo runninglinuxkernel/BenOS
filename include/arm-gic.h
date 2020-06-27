@@ -77,4 +77,9 @@
 #define GICH_MISR_EOI			(1 << 0)
 #define GICH_MISR_U			(1 << 1)
 
+/* only send interrupt to Core0 now*/
+#define _CPUMASK 0x1UL
+#define CPUMASK ((_CPUMASK) | (_CPUMASK << 8) | \
+		(_CPUMASK << 16) | (_CPUMASK << 24))
+
 int gic_init(int chip, unsigned long dist_base, unsigned long cpu_base);

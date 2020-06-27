@@ -84,38 +84,16 @@ static const struct irq_domain_ops gicv2_irq_domain_ops = {
 	.map = gicv2_irq_map,
 };
 
-static u8 gic_get_cpumask(struct gic_chip_data *gic)
-{
-	unsigned long base = gic_dist_base(gic);
-	u32 mask, i;
-
-	for (i = mask = 0; i < 32; i += 4) {
-		mask = readl(base + GIC_DIST_TARGET + i);
-		mask |= mask >> 16;
-		mask |= mask >> 8;
-		if (mask)
-			break;
-	}
-
-	return mask;
-}
-
 static void gic_dist_init(struct gic_chip_data *gic)
 {
 	unsigned long base = gic_dist_base(gic);
-	unsigned int cpumask;
 	unsigned int gic_irqs = gic->gic_irqs;
 	int i;
 
 	writel(GICD_DISABLE, base + GIC_DIST_CTRL);
 
-	/* set all global interrupts to this CPU only */
-	cpumask = gic_get_cpumask(gic);
-	cpumask |= cpumask << 8;
-	cpumask |= cpumask << 16;
-
 	for (i = 32; i < gic_irqs; i += 4)
-		writel(cpumask, base + GIC_DIST_TARGET + i * 4 / 4);
+		writel(CPUMASK, base + GIC_DIST_TARGET + i * 4 / 4);
 
 	/* Set all global interrupts to be level triggered, active low */
 	for (i = 32; i < gic_irqs; i += 16)
