@@ -136,7 +136,7 @@ static inline void clear_task_resched(struct task_struct *p)
 
 #define preempt_count() (current->preempt_count)
 
-#define hardirq_count()	(preepmt_count() & HARDIRQ_MASK)
+#define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
 
 #define in_atomic_preempt_off() \
 	(preempt_count() != 1)
