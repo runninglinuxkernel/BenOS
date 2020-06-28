@@ -206,7 +206,8 @@ int memblock_test(void)
 
 int test_lab11(void)
 {
-	memblock_test();
+	//memblock_test();
+	memblock_dump_region();
 
 	return 0;
 }

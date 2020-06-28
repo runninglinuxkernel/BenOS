@@ -42,10 +42,11 @@ void kernel_main(void)
 	uart_send_string("=Welcome BenOS!\r\n");
 	uart_send_string("i am benshushu!\r\n");
 
+	/* init mm */
+	mem_init(0, TOTAL_MEMORY);
+
 	setup_arch();
 
-	/* init mm */
-	mem_init((unsigned long)_ebss, TOTAL_MEMORY);
 	sched_init();
 
 	/* print mem layout*/

@@ -1,44 +1,39 @@
 #include <asm/mm.h>
 #include <printk.h>
+#include <memblock.h>
 
-#define NR_PAGES (TOTAL_MEMORY / PAGE_SIZE)
-
-static unsigned short mem_map[NR_PAGES] = {0,};
-
-static unsigned long phy_start_address;
+extern char _text_boot[], _end[];
 
 void mem_init(unsigned long start_mem, unsigned long end_mem)
 {
-	unsigned long nr_free_pages = 0;
 	unsigned long free;
+	unsigned long kernel_size;
 
 	start_mem = PAGE_ALIGN(start_mem);
-	phy_start_address = start_mem;
 	end_mem &= PAGE_MASK;
 	free = end_mem - start_mem;
 
-	while (start_mem < end_mem) {
-		nr_free_pages++;
-		start_mem += PAGE_SIZE;
-	}
+	memblock_add_region(start_mem, end_mem);
 
-	printk("Memory: %uKB available, %u free pages\n", free/1024, nr_free_pages);
+	kernel_size = _end - _text_boot;
+
+	printk("%s: kernel image: 0x%x - 0x%x, %d\n",
+			__func__, (unsigned long)_text_boot,
+			(unsigned long)_end, kernel_size);
+
+	memblock_reserve((unsigned long)_text_boot, kernel_size);
+
+	free -= kernel_size;
+
+	printk("Memory: %uKB available, %u free pages, kernel_size: %uKB\n",
+			free/1024, free/PAGE_SIZE, kernel_size/1024);
 }
 
 unsigned long get_free_page(void)
 {
-	int i;
-
-	for (i = 0; i < NR_PAGES; i++) {
-		if (mem_map[i] == 0) {
-			mem_map[i] = 1;
-			return LOW_MEMORY + i * PAGE_SIZE;
-		}
-	}
-	return 0;
+	return memblock_alloc(PAGE_SIZE);
 }
 
 void free_page(unsigned long p)
 {
-	mem_map[(p - LOW_MEMORY)/PAGE_SIZE] = 0;
 }
