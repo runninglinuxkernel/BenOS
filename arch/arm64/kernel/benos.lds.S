@@ -36,5 +36,6 @@ SECTIONS
 	.bss : { *(.bss*) }
 	bss_end = .;
 	_ebss = .;
+	_end = .;
 
 }

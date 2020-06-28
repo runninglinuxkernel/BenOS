@@ -3,6 +3,7 @@
 #include <sched.h>
 #include <printk.h>
 #include <string.h>
+#include <memblock.h>
 #include "../usr/syscall.h"
 
 static int el;
@@ -162,6 +163,54 @@ static int test_lab08(void)
 	return 0;
 }
 
+int memblock_test(void)
+{
+	unsigned long addr;
+
+	memblock_add_region(0, 0x10000000);
+
+	printk("reserver at the middle of memblock\n");
+	memblock_reserve(0x100000, 0x400000);
+	memblock_dump_region();
+
+	printk("alloc buffer size: 0x200000\n");
+	addr = memblock_alloc(0x200000);
+	printk("allocated addr: 0x%lx\n", addr);
+	memblock_dump_region();
+
+
+	printk("reserve at the start of memblock, start 0x700000\n");
+	memblock_reserve(0x700000, 0x100000);
+	memblock_dump_region();
+
+	printk("reserve at the end of memblock, start 0xfe00000\n");
+	memblock_reserve(0xfe00000, 0x200000);
+	memblock_dump_region();
+
+	printk("insert a new region at the tail: [0x40000000 ~ 0x50000000]\n");
+	memblock_add_region(0x40000000, 0x10000000);
+	memblock_dump_region();
+
+	printk("insert a new region at a hole: [0x35000000 ~ 0x36000000]\n");
+	memblock_add_region(0x35000000, 0x1000000);
+	memblock_dump_region();
+
+#if 0
+	printk("insert a new region at overlap: [0x35500000 ~ 0x36500000]\n");
+	memblock_add_region(0x35500000, 0x1000000);
+	memblock_dump_region();
+#endif
+
+	return 0;
+}
+
+int test_lab11(void)
+{
+	memblock_test();
+
+	return 0;
+}
+
 int test_benos(void)
 {
 	test_lab2();
@@ -169,6 +218,8 @@ int test_benos(void)
 	test_lab04();
 	test_lab05();
 	test_lab08();
+
+	test_lab11();
 
 	return 0;
 }

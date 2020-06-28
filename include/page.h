@@ -9,4 +9,5 @@
 #define PAGE_MASK (~(PAGE_SIZE-1))
 /* to align the pointer to the (next) page boundary */
 #define PAGE_ALIGN(addr) (((addr)+PAGE_SIZE-1)&PAGE_MASK)
-
+#define PAGE_ALIGN_UP(addr)  PAGE_ALIGN(addr)
+#define PAGE_ALIGN_DOWN(addr) (addr & PAGE_MASK)
