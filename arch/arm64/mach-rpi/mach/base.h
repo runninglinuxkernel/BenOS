@@ -18,4 +18,5 @@
 #define ARM_LOCAL_BASE 0xff800000
 #endif
 
+#define ARCH_PHYS_OFFSET 0
 #endif  /*_P_BASE_H */

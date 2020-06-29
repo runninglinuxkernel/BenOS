@@ -50,5 +50,8 @@ typedef unsigned int size_t;
 
 #define offsetof(TYPE, MEMBER)	((long)&((TYPE *)0)->MEMBER)
 
+#define min(a, b) (((a) < (b))?(a):(b))
+#define max(a, b) (((a) > (b))?(a):(b))
+
 #endif
 #endif

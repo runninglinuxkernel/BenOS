@@ -1,4 +1,4 @@
-#include <page.h>
+#include <asm/mm.h>
 
 OUTPUT_ARCH(aarch64)
 ENTRY(_start)

@@ -2,6 +2,7 @@
 #include <printk.h>
 #include <page.h>
 #include <memblock.h>
+#include <bitops.h>
 
 static struct memblock_region memblock_regions[MAX_MEMBLOCK_REGIONS];
 
@@ -262,9 +263,82 @@ void memblock_dump_region(void)
 {
 	struct memblock_region *mrg;
 
+	printk("dump all memblock regions:\n");
+
 	for_each_memblock_region(mrg) {
 		printk("0x%08lx - 0x%08lx, flags: %s\n",
 				mrg->base, mrg->base + mrg->size,
 				mrg->flags ? "RESERVE":"FREE");
 	}
+}
+
+void reserve_mem_region(unsigned long start, unsigned long end)
+{
+	unsigned long start_pfn = PFN_DOWN(start);
+	unsigned long end_pfn = PFN_UP(end);
+
+	for ( ; start_pfn < end_pfn; start_pfn++) {
+		struct page *page = pfn_to_page(start_pfn);
+
+		SetPageReserved(page);
+	}
+}
+
+static unsigned long memblock_free_memory(unsigned long start,
+		unsigned long end)
+{
+	unsigned long start_pfn = PFN_UP(start);
+	unsigned long end_pfn = PFN_DOWN(end);
+	unsigned long size;
+	int order;
+
+	if (start_pfn >= end_pfn)
+		return 0;
+
+	size = end - start;
+
+	while (start_pfn < end_pfn) {
+		order = min(MAX_ORDER - 1,  __ffs(start_pfn));
+
+		while ((start_pfn + (1 << order)) > end_pfn)
+			order--;
+
+		memblock_free_pages(pfn_to_page(start_pfn), order);
+
+		start_pfn += (1 << order);
+	}
+
+	return size;
+}
+
+unsigned long memblock_free_all(void)
+{
+	struct memblock_region *mrg;
+	unsigned long count = 0;
+	unsigned long reserve = 0;
+
+	memblock_dump_region();
+
+	/* reserve pages*/
+	for_each_memblock_region(mrg) {
+		if (mrg->flags != MEMBLOCK_RESERVE)
+			continue;
+		reserve_mem_region(mrg->base, mrg->base + mrg->size);
+		reserve += mrg->size;
+	}
+
+	/* fill free pages into buddy system */
+	for_each_memblock_region(mrg) {
+		if (mrg->flags != MEMBLOCK_FREE)
+			continue;
+		count += memblock_free_memory(mrg->base, mrg->base + mrg->size);
+	}
+
+	printk("Memory: total %uMB, add %uKB to buddy, %uKB reserve\n",
+			(count + reserve)/1024/1024,
+			count/1024, reserve/1024);
+
+	show_buddyinfo();
+
+	return count;
 }
