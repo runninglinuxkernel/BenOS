@@ -143,22 +143,32 @@ static void __free_one_page(struct page *page, unsigned long pfn,
 	max_order = MAX_ORDER;
 
 	while (order < max_order - 1) {
+		/* 往高地址处 找order相同的伙伴*/
 		buddy_pfn = find_buddy_pfn(pfn, order);
+		/* 伙伴的struct page */
 		buddy = page + (buddy_pfn - pfn);
 
+		/* 如果这个伙伴 不是空闲的,
+		 * 那么直接退出查找
+		 */
 		if (!page_is_buddy(buddy, order))
 			goto done_merge;
 
+		/* 找到空闲的伙伴，先从链表中摘下来*/
 		list_del(&buddy->lru);
 		zone->free_area[order].nr_free--;
 		clear_page_order(page);
 
+		/* 继续查找 更大一级oder*/
 		combined_pfn = buddy_pfn & pfn;
 		page = page + (combined_pfn - pfn);
 		pfn = combined_pfn;
 		order++;
 	}
 
+	/* 把找到的空闲页面添加到伙伴系统中
+	 * 这时候可能合并了几轮合适的伙伴
+	 */
 done_merge:
 	set_page_order(page, order);
 	list_add(&page->lru, &zone->free_area[order].free_list);
@@ -174,6 +184,7 @@ static void free_pages_ok(struct page *page, unsigned int order)
 
 void __free_pages(struct page *page, unsigned int order)
 {
+	/* 当refcount减1等于0说明这个页面可以被释放 */
 	/*Todo: using put_page_testzero or atomic_dec_and_test*/
 	if (page->refcount - 1 == 0)
 		free_pages_ok(page, order);
@@ -190,6 +201,7 @@ void memblock_free_pages(struct page *page, unsigned int order)
 		set_page_count(p, 0);
 	}
 
+	/* 设置refcount为1 */
 	set_page_count(page, 1);
 	__free_pages(page, order);
 }
@@ -218,6 +230,10 @@ static struct page *__rmqueue(struct zone *zone, unsigned int order)
 	for (current_order = order; current_order < MAX_ORDER;
 			++current_order) {
 		area = &zone->free_area[current_order];
+		/*
+		 * 这里需要判断链表是否为空
+		 * 否则list_entry()会出错
+		 */
 		if (list_empty(&area->free_list))
 			continue;
 
@@ -226,6 +242,7 @@ static struct page *__rmqueue(struct zone *zone, unsigned int order)
 		list_del(&page->lru);
 		clear_page_order(page);
 		area->nr_free--;
+		/* 切大块的空闲内存块 */
 		expend(zone, page, order, current_order, area);
 		return page;
 	}

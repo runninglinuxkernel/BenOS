@@ -18,6 +18,12 @@ unsigned long bootmem_get_end_ddr(void)
 	return TOTAL_MEMORY;
 }
 
+/*
+ *  memblock_init - 初始化memblock
+ *
+ *  1. 添加内存到memblock分配器
+ *  2. 内核image部分设置为RESERVE
+ */
 void memblock_init(void)
 {
 	unsigned long free;
@@ -59,6 +65,12 @@ static void zone_sizes_init(unsigned long min, unsigned long max)
 	free_area_init_node(0, min, zone_size);
 }
 
+/*
+ * bootmem_init - 初始化内存
+ *
+ * 1. 初始化pgdata, zone等数据结构
+ * 2. 分配mem_map[]数组用来存储struct page
+ */
 void bootmem_init(void)
 {
 	unsigned long min, max;
@@ -69,6 +81,10 @@ void bootmem_init(void)
 	zone_sizes_init(min, max);
 }
 
+/*
+ *
+ * mem_init - 把memblock中的空闲内存添加到伙伴系统
+ */
 void mem_init(void)
 {
 	memblock_free_all();

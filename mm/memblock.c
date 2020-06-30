@@ -4,6 +4,33 @@
 #include <memblock.h>
 #include <bitops.h>
 
+/*
+ *  memblock分配器使用memory region的概念来管理内存，它是
+ *  在伙伴系统初始化之前使用的这种简单的内存管理。
+ *
+ *  在初始化伙伴系统时，需要为mem_map[]数组分配内存，但是
+ *  由于不知道内存有多少page，所以mem_map[]不能使用全局数
+ *  组来分配内存。适合使用memblock来分配内存，这些内存被
+ *  设置为RESERVE。
+ *
+ *  1. 内存状态一共分成两个，一是FREE，另外一个RESERVE。
+ *  RESERVE表示已经分配和内核预留的内存，这些内存不会添加
+ *  到伙伴系统。
+ *  2. 使用一个全局的双向链表来管理所有的memory regions。
+ *  所有的regions按照地址从小到大的方向来 串成一个链表。
+ *
+ *  为了避免嵌套使用memblock分配器，使用memblock_regions[]
+ *  来静态初始化n个region描述符，使用的时候用
+ *  memblock_get_region_entity()函数来分配。
+ *  3. 目前支持的操作：
+ *     memblock_add_region() 添加一个memory region到链表里。
+ *     memblock_reserve() 把某一个区间设置为RESERVE。
+ *     memblock_alloc() 从memblock中分配内存。
+ * 4. 由于memblock是临时的内存管理方案，很快就会把空闲内存
+ *  交给伙伴系统，因此不支持释放内存操作。
+ * 5. 暂不支持 相邻的region合并操作。
+ */
+
 static struct memblock_region memblock_regions[MAX_MEMBLOCK_REGIONS];
 
 struct memblock memblock = {
@@ -102,6 +129,7 @@ int memblock_add_region(unsigned long base, unsigned long size)
 				goto found_tail;
 		}
 
+		/* 有重叠的地方，说明有bug */
 		if (end > mend && mend > base) {
 			printk("%s: error memblock overlap with [0x%lx ~ 0x%lx]\n",
 					__func__, mbase, mend);
@@ -115,6 +143,7 @@ int memblock_add_region(unsigned long base, unsigned long size)
 			break;
 		}
 
+		/* 新region在两个region中间 */
 		goto found;
 	}
 
@@ -140,7 +169,9 @@ unsigned long memblock_alloc(unsigned long size)
 
 	size = PAGE_ALIGN_UP(size);
 
-	/* free buffer start from the end of kernel image */
+	/*
+	 * 从内核image结束的地方开始查找空闲内存
+	 */
 	alloc_start = PAGE_ALIGN((unsigned long)_end);
 
 	for_each_memblock_region(mrg) {
@@ -197,11 +228,14 @@ int memblock_reserve(unsigned long base, unsigned long size)
 		if (mrg->flags != MEMBLOCK_FREE)
 			continue;
 
-		/*case 0: */
+		/*case 0: 正好完全吻合 */
 		if (mend == end && mbase == base) {
 			mrg->flags = MEMBLOCK_RESERVE;
 			return 0;
-		} else if (mbase == base) { /* case 1*/
+		} else if (mbase == base) {
+			/* case 1: 低地址正好吻合，
+			 * 高地址处会多出一截
+			 */
 			new = memblock_init_entity(base, size,
 					MEMBLOCK_RESERVE);
 			if (!new)
@@ -214,7 +248,10 @@ int memblock_reserve(unsigned long base, unsigned long size)
 			memblock_insert_new(prev, new, mrg);
 			memblock.num_regions++;
 			return 0;
-		} else if (mend == base + size) { /* case 2*/
+		} else if (mend == base + size) {
+			/* case 2: 高地址正好吻合，
+			 * 低地址处会多出一截
+			 */
 			new = memblock_init_entity(mbase, mrg->size - size,
 					MEMBLOCK_FREE);
 			if (!new)
@@ -228,7 +265,8 @@ int memblock_reserve(unsigned long base, unsigned long size)
 			memblock_insert_new(prev, new, mrg);
 			memblock.num_regions++;
 			return 0;
-		} else if (mbase < base && mend > end) { /*case 3*/
+		} else if (mbase < base && mend > end) {
+			/*case 3: 正好在中间，两头都多出一截*/
 			new = memblock_init_entity(mbase, base - mbase,
 					MEMBLOCK_FREE);
 			if (!new)
@@ -298,6 +336,14 @@ static unsigned long memblock_free_memory(unsigned long start,
 	size = end - start;
 
 	while (start_pfn < end_pfn) {
+		/* __ffs: 查找start_pfn的第一个bit位的位置
+		 * 例如 start_pfn=1, 那么返回0，
+		 * start_pfn=2,返回1
+		 * start_pfn =0, 返回0xffffffff
+		 *
+		 * 根据start_pfn与pageblock的对齐和边界关系，
+		 * 尽可能确保order取最大的oder值来提交伙伴系统
+		 */
 		order = min(MAX_ORDER - 1,  __ffs(start_pfn));
 
 		while ((start_pfn + (1 << order)) > end_pfn)
@@ -327,7 +373,7 @@ unsigned long memblock_free_all(void)
 		reserve += mrg->size;
 	}
 
-	/* fill free pages into buddy system */
+	/* 把memblock管理的空闲页面都添加到伙伴系统中 */
 	for_each_memblock_region(mrg) {
 		if (mrg->flags != MEMBLOCK_FREE)
 			continue;
