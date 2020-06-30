@@ -2,6 +2,7 @@
 #include <printk.h>
 #include <memblock.h>
 #include <page.h>
+#include <string.h>
 
 struct page *mem_map;
 
@@ -50,6 +51,8 @@ static int alloc_node_mem_map(struct pg_data *pgdat)
 		map = (struct page *)memblock_alloc(size);
 		if (!map)
 			return -EINVAL;
+
+		memset(map, 0, size);
 
 		printk("%s: map:0x%lx, size:%d (%d pages), offset:%d\n",
 				__func__, (unsigned long)map,
