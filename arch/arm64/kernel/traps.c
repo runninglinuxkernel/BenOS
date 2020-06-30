@@ -86,7 +86,12 @@ static int unwind_frame(struct stackframe *frame)
 	low = frame->sp;
 	high = ALIGN(low, THREAD_SIZE);
 
-	if (fp < low || fp > high - 0x18 || fp & 0xf)
+	/* fp在 栈顶部和栈底之间*/
+	if (fp < low || fp > high)
+		return -EINVAL;
+
+	/* fp必须16字节对齐*/
+	if (fp & 0xf)
 		return -EINVAL;
 
 	frame->sp = fp;
