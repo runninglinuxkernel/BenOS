@@ -1,5 +1,5 @@
-#ifndef	_UART_H
-#define	_UART_H
+#ifndef	ASM_UART_H
+#define	ASM_UART_H
 
 void uart_init(void);
 char uart_recv(void);

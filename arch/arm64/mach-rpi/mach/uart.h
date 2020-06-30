@@ -1,5 +1,5 @@
-#ifndef	_P_UART_H
-#define	_P_UART_H
+#ifndef MACH_UART_H
+#define	MACH_UART_H
 
 #include "base.h"
 
@@ -13,4 +13,4 @@
 #define U_CR_REG     (U_BASE+0x30)
 #define U_IMSC_REG   (U_BASE+0x38)
 
-#endif  /*_P_UART_H */
+#endif  /*MACH_UART_H */

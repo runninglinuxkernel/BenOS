@@ -1,3 +1,6 @@
+#ifndef ASM_CURRENT_H
+#define ASM_CURRENT_H
+
 register unsigned long current_stack_pointer asm ("sp");
 
 static inline struct task_struct *get_current(void)
@@ -7,3 +10,5 @@ static inline struct task_struct *get_current(void)
 }
 
 #define current get_current()
+
+#endif /*ASM_CURRENT_H*/

@@ -1,3 +1,6 @@
+#ifndef PAGE_H
+#define PAGE_H
+
 #include <mm_types.h>
 #include <asm/mm.h>
 
@@ -36,3 +39,9 @@ struct page *alloc_pages(unsigned int order);
 void show_buddyinfo(void);
 void free_area_init_node(int nid, unsigned long node_start_pfn,
 		unsigned long *zone_size);
+unsigned long get_free_pages(unsigned int order);
+unsigned long get_free_page(void);
+void free_pages(unsigned long addr, unsigned int order);
+void free_page(unsigned long addr);
+
+#endif /*PAGE_H*/

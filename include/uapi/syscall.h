@@ -1,3 +1,6 @@
+#ifndef UAPI_SYSCALL_H
+#define UAPI_SYSCALL_H
+
 #define __NR_open 0
 //__SYSCALL(__NR_open, sys_open)
 
@@ -16,3 +19,5 @@
 #define __NR_malloc 5
 
 #define __NR_syscalls 6
+
+#endif /* UAPI_SYSCALL_H*/

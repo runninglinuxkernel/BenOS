@@ -1,5 +1,5 @@
-#ifndef	_P_BASE_H
-#define	_P_BASE_H
+#ifndef MACH_BASE_H
+#define	MACH_BASE_H
 
 #ifdef CONFIG_BOARD_PI3B
 #define PBASE 0x3F000000
@@ -19,4 +19,5 @@
 #endif
 
 #define ARCH_PHYS_OFFSET 0
-#endif  /*_P_BASE_H */
+
+#endif  /*MACH_BASE_H */

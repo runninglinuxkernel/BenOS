@@ -1,3 +1,6 @@
+#ifndef MM_TYPES_H
+#define MM_TYPES_H
+
 #include <list.h>
 #include <atomic.h>
 
@@ -59,3 +62,4 @@ struct page {
 	unsigned int node_id;
 	int refcount;
 };
+#endif /*MM_TYPES_H*/

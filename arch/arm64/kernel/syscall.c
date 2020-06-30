@@ -1,6 +1,6 @@
 #include <asm/syscall.h>
 #include <uapi/syscall.h>
-#include <memory.h>
+#include <page.h>
 #include <fs.h>
 
 static long sys_ni_syscall(struct pt_regs *regs)

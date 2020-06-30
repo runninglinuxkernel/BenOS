@@ -1,5 +1,6 @@
 #ifndef _BENOS_TYPE_H
-#define _LINUX_TYPE_H
+#define _BENOS_TYPE_H
+
 #include <errorno.h>
 
 #define SZ_1K				0x00000400
@@ -54,4 +55,4 @@ typedef unsigned int size_t;
 #define max(a, b) (((a) > (b))?(a):(b))
 
 #endif
-#endif
+#endif /*BENOS_TYPE_H*/

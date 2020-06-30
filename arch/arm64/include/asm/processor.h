@@ -1,3 +1,6 @@
+#ifndef ASM_PROCESSOR_H
+#define ASM_PROCESSOR_H
+
 struct cpu_context {
 	unsigned long x19;
 	unsigned long x20;
@@ -14,3 +17,4 @@ struct cpu_context {
 	unsigned long pc;
 };
 
+#endif /*ASM_PROCESSOR_H*/

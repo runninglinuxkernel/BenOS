@@ -1,3 +1,5 @@
+#ifndef ERRORNO_H
+#define ERRORNO_H
 
 #define	EPERM		 1	/* Operation not permitted */
 #define	ENOENT		 2	/* No such file or directory */
@@ -37,3 +39,5 @@
 #define	ENAMETOOLONG	36	/* File name too long */
 #define	ENOLCK		37	/* No record locks available */
 #define	ENOSYS		38	/* Invalid system call number */
+
+#endif /*ERRORNO_H*/

@@ -1,6 +1,6 @@
 #include <sched.h>
 #include <string.h>
-#include <memory.h>
+#include <page.h>
 #include <type.h>
 #include <asm/stacktrace.h>
 

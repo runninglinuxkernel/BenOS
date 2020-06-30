@@ -1,3 +1,6 @@
+#ifndef MACH_TIMER_H
+#define MACH_TIMER_H
+
 #include "base.h"
 
 /* System Timer on PI */
@@ -32,3 +35,5 @@
 #define TIMER_FLAG    (PERIPHERAL_BASE+0x38)
 
 void timer_init(void);
+
+#endif /*MACH_TIMER_H*/

@@ -1,3 +1,6 @@
+#ifndef ASM_SYSTEM_H
+#define ASM_SYSTEM_H
+
 #include <type.h>
 
 /*
@@ -40,3 +43,5 @@ struct pt_regs {
 	u64 unused;
 	u64 stackframe[2];
 };
+
+#endif /*ASM_SYSTEM_H*/

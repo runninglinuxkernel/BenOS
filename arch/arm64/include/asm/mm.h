@@ -1,5 +1,6 @@
-#ifndef	_MM_H
-#define	_MM_H
+#ifndef	ASM_MM_H
+#define	ASM_MM_H
+
 #include <mach/base.h>
 
 #define TOTAL_MEMORY (SZ_1G)
@@ -26,4 +27,4 @@ void bootmem_init(void);
 void mem_init(void);
 #endif
 
-#endif  /*_MM_H */
+#endif  /*ASM_MM_H */

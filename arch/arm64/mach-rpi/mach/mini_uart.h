@@ -1,5 +1,5 @@
-#ifndef _P_MINI_UART_H
-#define _P_MINI_UART_H
+#ifndef MACH_MINI_UART_H
+#define MACH_MINI_UART_H
 
 #include "base.h"
 
@@ -16,4 +16,4 @@
 #define AUX_MU_STAT_REG (PBASE + 0x00215064)
 #define AUX_MU_BAUD_REG (PBASE + 0x00215068)
 
-#endif /*_P_MINI_UART_H */
+#endif /*MACH_MINI_UART_H */

@@ -1,3 +1,6 @@
+#ifndef ATOMIC_H
+#define ATOMIC_H
+
 #include <asm/types.h>
 
 #define BIT_MASK(nr) (1UL << ((nr) % BITS_PER_LONG))
@@ -30,3 +33,5 @@ static inline int test_bit(int nr, const volatile unsigned long *addr)
 {
 	return 1UL & (*addr >> (nr & (BITS_PER_LONG-1)));
 }
+
+#endif /*ATOMIC_H*/

@@ -1,3 +1,6 @@
+#ifndef SCHED_H
+#define SCHED_H
+
 #include <asm/system.h>
 #include <mm.h>
 #include <asm/processor.h>
@@ -167,3 +170,5 @@ static inline void preempt_sub(int val)
 
 #define __irq_enter() preempt_add(HARDIRQ_OFFSET)
 #define __irq_exit() preempt_sub(HARDIRQ_OFFSET)
+
+#endif /*SCHED_H*/

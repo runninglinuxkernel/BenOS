@@ -1,3 +1,5 @@
+#ifndef MEMBLOCK_H
+#define MEMBLOCK_H
 
 enum memblock_flags {
 	MEMBLOCK_FREE = 0,
@@ -28,3 +30,5 @@ int memblock_add_region(unsigned long base, unsigned long size);
 unsigned long memblock_alloc(unsigned long size);
 int memblock_reserve(unsigned long base, unsigned long size);
 void memblock_dump_region(void);
+
+#endif /*MEMBLOCK_H*/

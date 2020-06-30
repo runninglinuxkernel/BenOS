@@ -1,3 +1,6 @@
+#ifndef MACH_IRQ_H
+#define MACH_IRQ_H
+
 #include "base.h"
 #include "arm_local_reg.h"
 
@@ -116,3 +119,4 @@
 
 #endif
 
+#endif /*MAC_IRQ_H*/

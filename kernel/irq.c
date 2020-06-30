@@ -1,7 +1,7 @@
 #include <irq.h>
 #include <sched.h>
 #include <printk.h>
-#include <memory.h>
+#include <page.h>
 #include <string.h>
 
 struct irq_desc irq_desc[NR_IRQS];

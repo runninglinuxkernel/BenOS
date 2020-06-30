@@ -1,3 +1,5 @@
+#ifndef BITOPS_H
+#define BITOPS_H
 
 /**
  * ffs - find first bit set
@@ -72,3 +74,4 @@ static inline unsigned long __ffs(unsigned long word)
 		num += 1;
 	return num;
 }
+#endif /*BITOPS_H*/

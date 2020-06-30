@@ -1,5 +1,5 @@
-#ifndef _SYSREGS_H
-#define _SYSREGS_H
+#ifndef ASM_SYSREGS_H
+#define ASM_SYSREGS_H
 
 #include <type.h>
 
@@ -219,4 +219,4 @@
 		_val; \
 })
 
-#endif
+#endif /*ASM_SYSREGS_H*/

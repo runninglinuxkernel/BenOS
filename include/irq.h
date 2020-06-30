@@ -1,3 +1,6 @@
+#ifndef IRQ_H
+#define IRQ_H
+
 #include <asm/irq.h>
 
 #define raw_local_irq_disable()	arch_local_irq_disable()
@@ -76,3 +79,4 @@ int generic_handle_irq(unsigned int virq);
 unsigned int irq_find_mapping(struct irq_domain *domain, unsigned int hwirq);
 int handle_domain_irq(struct irq_domain *domain, unsigned int hwirq);
 
+#endif /*IRQ_H*/
