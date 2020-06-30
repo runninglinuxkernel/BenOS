@@ -9,7 +9,8 @@
 
 /* 暂时使用1个4KB页面来当作内核栈*/
 #define THREAD_SIZE  (1 * PAGE_SIZE)
-#define THREAD_START_SP  (THREAD_SIZE - 8)
+/* sp必须16字节对齐，因为arm扩展的_int128类型是16字节 */
+#define THREAD_START_SP  (THREAD_SIZE - 16)
 
 #ifndef __ASSEMBLER__
 void memzero(unsigned long src, unsigned long n);
