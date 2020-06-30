@@ -32,6 +32,7 @@ export	TEXT_OFFSET GZFLAGS
 
 core-y		+= arch/arm64/kernel/
 core-y		+= arch/arm64/mm/
+core-y		+= arch/arm64/lib/
 
 ## add mach-rpi folder
 ifeq ($(CONFIG_ARCH_BCM2835),y)
