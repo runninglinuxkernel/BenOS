@@ -212,6 +212,27 @@ int test_lab11(void)
 	return 0;
 }
 
+int test_memset(void)
+{
+	char buf[201];
+	char val = 0xa5;
+	int i;
+	char *p;
+
+	memset(buf, val, 201);
+
+	/*check the buffer*/
+	p = buf;
+	for (i = 0; i < 201; i++) {
+		if (*p++ != val)
+			printk("%s, failed\n", __func__);
+	}
+
+	printk("%s done\n", __func__);
+
+	return 0;
+}
+
 int test_benos(void)
 {
 	test_lab2();
@@ -221,6 +242,8 @@ int test_benos(void)
 	test_lab08();
 
 	test_lab11();
+
+	test_memset();
 
 	return 0;
 }
