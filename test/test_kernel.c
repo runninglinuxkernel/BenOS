@@ -5,6 +5,7 @@
 #include <string.h>
 #include <memblock.h>
 #include "../usr/syscall.h"
+#include <atomic.h>
 
 static int el;
 
@@ -233,6 +234,35 @@ int test_memset(void)
 	return 0;
 }
 
+int test_set_bit(void)
+{
+	unsigned long p = 0;
+	unsigned long val = 0xffffffffffffffff;
+	int i;
+
+	for (i = 0; i < BITS_PER_LONG; i++) {
+		set_bit(i, &p);
+		if (p != (1ULL << i)) {
+			printk("%s: set fail %d\n", __func__, i);
+			return -EINVAL;
+		}
+		p = 0;
+	}
+
+	p = val;
+	for (i = 0; i < BITS_PER_LONG; i++, p = val) {
+		clear_bit(i, &p);
+
+		if (p != (val & ~(1ULL << i))) {
+			printk("%s clear fail %d\n", __func__, i);
+		}
+	}
+
+	printk("%s done\n", __func__);
+
+	return 0;
+}
+
 int test_benos(void)
 {
 	test_lab2();
@@ -244,6 +274,7 @@ int test_benos(void)
 	test_lab11();
 
 	test_memset();
+	test_set_bit();
 
 	return 0;
 }
