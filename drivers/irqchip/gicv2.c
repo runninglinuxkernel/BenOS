@@ -159,8 +159,6 @@ void gic_cpu_init(struct gic_chip_data *gic)
 	writel(GICC_ENABLE, base + GIC_CPU_CTRL);
 }
 
-
-
 static void gic_handle_irq(void)
 {
 	struct gic_chip_data *gic = &gic_data[0];

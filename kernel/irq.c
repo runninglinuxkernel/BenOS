@@ -1,8 +1,8 @@
 #include <irq.h>
 #include <sched.h>
 #include <printk.h>
-#include <page.h>
 #include <string.h>
+#include <slab.h>
 
 struct irq_desc irq_desc[NR_IRQS];
 
@@ -131,12 +131,9 @@ struct irq_domain *irq_domain_add(unsigned int virq, unsigned int hwirq,
 	struct irq_domain *domain;
 	int i;
 
-	/* FIXME: using kmalloc later*/
-	domain = (struct irq_domain *)get_free_page();
+	domain = kmalloc(sizeof(*domain));
 	if (!domain)
 		return NULL;
-
-	memset(domain, 0, sizeof(*domain));
 
 	domain->ops = ops;
 	domain->host_data = host_data;
@@ -146,6 +143,11 @@ struct irq_domain *irq_domain_add(unsigned int virq, unsigned int hwirq,
 		irq_domain_map_irq(domain, virq + i, hwirq + i);
 
 	return domain;
+}
+
+void irq_domain_remove(struct irq_domain *domain)
+{
+	kfree(domain);
 }
 
 int irq_domain_set_hwirq_chip(struct irq_domain *domain, unsigned int virq,
