@@ -262,6 +262,8 @@ void *kmalloc(size_t size)
 	void *ret;
 	struct page *page;
 
+	size = ALIGN(size, sizeof(unsigned int));
+
 	if (size < PAGE_SIZE - align) {
 
 		b = slob_alloc(size + align, align);
