@@ -94,9 +94,22 @@ static int unwind_frame(struct stackframe *frame)
 	if (fp & 0xf)
 		return -EINVAL;
 
-	frame->sp = fp;
+	/*子函数栈的FP存储了父函数PF的值*/
 	frame->fp = *(unsigned long *)(fp);
+	frame->sp = fp;
 
+	/*
+	 * 根据子函数栈帧里保存的LR可以间接
+	 * 获取父函数调用子函数时的PC值
+	 *
+	 * 在调用子函数时，LR指向子函数
+	 * 返回的下一条指令
+	 *
+	 * PC_f=*LR_c-4=*(FP_c+8)-4
+	 *
+	 * PC_f: 指的是父函数调用子函数时
+	 * 的PC值
+	 */
 	frame->pc = *(unsigned long *)(fp + 8) - 4;
 
 	return 0;
