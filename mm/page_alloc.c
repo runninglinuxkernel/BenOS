@@ -285,7 +285,7 @@ unsigned long get_free_pages(unsigned int order)
 		return 0;
 
 	addr = page_to_addr(page);
-	printk("%s: 0x%lx\n", __func__, addr);
+	//printk("%s: 0x%lx\n", __func__, addr);
 
 	return addr;
 }

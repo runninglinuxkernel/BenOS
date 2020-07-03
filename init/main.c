@@ -6,6 +6,7 @@
 #include <asm/timer.h>
 #include <memory.h>
 #include <asm/init.h>
+#include <slab.h>
 #include "../test/test_kernel.h"
 
 extern char _text_boot[], _etext_boot[];
@@ -45,6 +46,7 @@ void kernel_main(void)
 	setup_arch();
 
 	sched_init();
+	kmem_cache_init();
 
 	/* print mem layout*/
 	print_mem();

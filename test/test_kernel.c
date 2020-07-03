@@ -4,6 +4,7 @@
 #include <printk.h>
 #include <string.h>
 #include <memblock.h>
+#include <slab.h>
 #include "../usr/syscall.h"
 
 static int el;
@@ -233,6 +234,50 @@ int test_memset(void)
 	return 0;
 }
 
+int test_slob(void)
+{
+	void *b;
+	int i;
+	unsigned int *buffer[100];
+
+	/* test alloc and free*/
+	for (i = 0; i < 100000; i++) {
+		b = kmalloc(i % 8192);
+		if (!b) {
+			printk("%s fail, %d\n", __func__, i);
+			return -EINVAL;
+		}
+
+		kfree(b);
+	}
+
+	/* test case 2*/
+	for (i = 0; i < 100; i++) {
+		b = kmalloc(9);
+		if (!b) {
+			printk("%s fail, %d\n", __func__, i); return -EINVAL;
+		}
+
+		buffer[i] = b;
+	}
+
+	kfree(buffer[9]);
+	//kfree(buffer[9]);
+	kfree(buffer[11]);
+	kfree(buffer[9]);
+
+	/* test case 3*/
+	b = kmalloc(4 * PAGE_SIZE);
+	if (!b) {
+		printk("%s fail\n", __func__);
+		return -EINVAL;
+	}
+
+	printk("%s done\n", __func__);
+
+	return 0;
+}
+
 int test_benos(void)
 {
 	test_lab2();
@@ -244,6 +289,7 @@ int test_benos(void)
 	test_lab11();
 
 	test_memset();
+	test_slob();
 
 	return 0;
 }

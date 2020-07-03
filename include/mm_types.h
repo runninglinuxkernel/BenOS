@@ -14,6 +14,7 @@ enum pageflags {
 	PG_locked,
 	PG_reserved,
 	PG_buddy,
+	PG_slab,
 };
 
 #define PageReserved(page)  test_bit(PG_reserved, &(page)->flags)
@@ -24,8 +25,12 @@ enum pageflags {
 #define LockPage(page)	set_bit(PG_locked, &(page)->flags)
 
 #define PageBuddy(page)  test_bit(PG_buddy, &(page)->flags)
-#define SetPageBuddy(page)	set_bit(PG_buddy, &(page)->flags)
-#define ClearPageBuddy(page)	clear_bit(PG_buddy, &(page)->flags)
+#define SetPageBuddy(page) set_bit(PG_buddy, &(page)->flags)
+#define ClearPageBuddy(page) clear_bit(PG_buddy, &(page)->flags)
+
+#define PageSlab(page)  test_bit(PG_slab, &(page)->flags)
+#define SetPageSlab(page) set_bit(PG_slab, &(page)->flags)
+#define ClearPageSlab(page) clear_bit(PG_slab, &(page)->flags)
 
 enum zone_type {
 	ZONE_NORMAL = 0,
@@ -61,5 +66,9 @@ struct page {
 	unsigned int zone_id;
 	unsigned int node_id;
 	int refcount;
+	/*slob*/
+	void *freelist;
+	int slob_left_units;
+
 };
 #endif /*MM_TYPES_H*/

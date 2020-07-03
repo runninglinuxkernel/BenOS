@@ -54,5 +54,7 @@ typedef unsigned int size_t;
 #define min(a, b) (((a) < (b))?(a):(b))
 #define max(a, b) (((a) > (b))?(a):(b))
 
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+
 #endif
 #endif /*BENOS_TYPE_H*/

@@ -3,6 +3,7 @@
 
 #include <mm_types.h>
 #include <asm/mm.h>
+#include <bitops.h>
 
 extern struct page *mem_map;
 
@@ -20,6 +21,17 @@ extern struct page *mem_map;
 
 #define PFN_UP(x) (((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
 #define PFN_DOWN(x)  (x >> PAGE_SHIFT)
+
+static inline int get_order(unsigned long size)
+{
+	int order;
+
+	size--;
+	size >>= PAGE_SHIFT;
+	order = fls64(size);
+
+	return order;
+}
 
 static inline struct zone *page_zone(const struct page *page)
 {
