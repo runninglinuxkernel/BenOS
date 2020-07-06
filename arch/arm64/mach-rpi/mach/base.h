@@ -4,6 +4,7 @@
 #ifdef CONFIG_BOARD_PI3B
 #define PBASE 0x3F000000
 #define ARM_LOCAL_BASE 0x40000000
+#define PBASE_END 0x41000000
 #else
 /* Main peripherals on Low Peripheral mode
  * - ARM and GPU can access
@@ -16,7 +17,10 @@
  * see <BCM2711 ARM Peripherals> 6.5.2
  */
 #define ARM_LOCAL_BASE 0xff800000
+#define PBASE_END 0x100000000
 #endif
+
+#define DEVICE_SIZE 0x2000000
 
 #define ARCH_PHYS_OFFSET 0
 

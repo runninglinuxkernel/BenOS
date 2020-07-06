@@ -25,6 +25,7 @@
 #define _UL(x)		(_AC(x, UL))
 #define _ULL(x)		(_AC(x, ULL))
 
+#define BIT(nr)		(1UL << (nr))
 #define _BITUL(x)	(_UL(1) << (x))
 #define _BITULL(x)	(_ULL(1) << (x))
 
@@ -55,6 +56,7 @@ typedef unsigned int size_t;
 #define max(a, b) (((a) > (b))?(a):(b))
 
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #endif
 #endif /*BENOS_TYPE_H*/

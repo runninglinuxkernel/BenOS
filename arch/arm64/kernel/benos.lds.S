@@ -17,20 +17,28 @@ SECTIONS
 	}
 	_etext = .;
 
+	. = ALIGN(PAGE_SIZE);
 	_rodata = .;
 	.rodata : {
 		*(.rodata)
 	}
 	_erodata = .;
+
+	. = ALIGN(PAGE_SIZE);
 	_data = .;
 	.data : {
 		*(.data)
 		. = ALIGN(PAGE_SIZE);
 		*(.data.init_task)
 	}
+	. = ALIGN(PAGE_SIZE);
+	idmap_pg_dir = .;
+	. += PAGE_SIZE;
 
 	. = ALIGN(0x8);
 	_edata = .;
+
+	. = ALIGN(PAGE_SIZE);
 	_bss = .;
 	bss_begin = .;
 	.bss : { *(.bss*) }

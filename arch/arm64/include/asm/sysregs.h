@@ -206,11 +206,11 @@
 		_val; \
 })
 
-#define write_sysreg(val, reg) (do { \
+#define write_sysreg(val, reg) ({ \
 		u64 _val = (u64)val; \
-		asm volatile("msr " #reg ", %0" \
+		asm volatile("msr " #reg ", %x0" \
 		:: "rZ"(_val)); \
-} while (0))
+})
 
 #define get_currentel() ({ \
 		u64 _val; \

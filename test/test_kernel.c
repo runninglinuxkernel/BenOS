@@ -9,6 +9,8 @@
 
 static int el;
 
+static int enable_dump_pgtable = 1;
+
 static void test_lab2(void)
 {
 	printk("test lab02: get EL\n");
@@ -278,6 +280,21 @@ int test_slob(void)
 	return 0;
 }
 
+static int test_access_unmap_address(void)
+{
+	unsigned long address = TOTAL_MEMORY + 4096;
+
+	*(unsigned long *)address = 0x55;
+
+	return 0;
+}
+
+static void test_dump_pgtable(void)
+{
+	if (enable_dump_pgtable)
+		dump_pgtable();
+}
+
 int test_benos(void)
 {
 	test_lab2();
@@ -290,6 +307,8 @@ int test_benos(void)
 
 	test_memset();
 	test_slob();
+	test_dump_pgtable();
+	//test_access_unmap_address();
 
 	return 0;
 }
