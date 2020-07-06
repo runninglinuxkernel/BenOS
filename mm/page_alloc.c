@@ -19,14 +19,12 @@ static void calculate_node_totalpages(struct pg_data *pgdat,
 
 	for (i = 0; i < MAX_NR_ZONES; i++) {
 		struct zone *zone = pgdat->node_zones + i;
-		unsigned long size;
 
-		zone_start += size;
+		zone_start += totalpages;
 		zone->zone_start_pfn = zone_start;
-		size = zone_size[i];
-		zone->spanned_pages = size;
+		zone->spanned_pages = zone_size[i];
 
-		totalpages += size;
+		totalpages += zone_size[i];
 	}
 
 	pgdat->node_spanned_pages = totalpages;
