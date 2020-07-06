@@ -10,6 +10,7 @@
 static int el;
 
 static int enable_dump_pgtable = 1;
+static int test_virt_access;
 
 static void test_lab2(void)
 {
@@ -280,11 +281,20 @@ int test_slob(void)
 	return 0;
 }
 
+/*
+ * 访问一个没有建立映射的地址
+ * 应该会触发一级页表访问错误。
+ *
+ * Translation fault, level 1
+ *
+ * 见armv8.6手册第2995页
+ */
 static int test_access_unmap_address(void)
 {
-	unsigned long address = TOTAL_MEMORY + 4096;
+	unsigned long address = 0x60000000;
 
-	*(unsigned long *)address = 0x55;
+	if (test_virt_access)
+		*(unsigned long *)address = 0x55;
 
 	return 0;
 }
@@ -308,7 +318,7 @@ int test_benos(void)
 	test_memset();
 	test_slob();
 	test_dump_pgtable();
-	//test_access_unmap_address();
+	test_access_unmap_address();
 
 	return 0;
 }
