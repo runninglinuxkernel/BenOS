@@ -28,7 +28,6 @@
  *     memblock_alloc() 从memblock中分配内存。
  * 4. 由于memblock是临时的内存管理方案，很快就会把空闲内存
  *  交给伙伴系统，因此不支持释放内存操作。
- * 5. 暂不支持 相邻的region合并操作。
  */
 
 static struct memblock_region memblock_regions[MAX_MEMBLOCK_REGIONS];
@@ -186,21 +185,35 @@ unsigned long memblock_alloc(unsigned long size)
 			continue;
 		if (mrg->flags != MEMBLOCK_FREE)
 			continue;
+		if (mbase < alloc_start)
+			continue;
 
-		if (mbase >= alloc_start) {
-			new = memblock_init_entity(mbase,
-					size, MEMBLOCK_RESERVE);
-			if (!new)
-				return -EINVAL;
+		/* 当prev的memblock属性是RESERVE
+		 * next的属性是FREE，两者相邻，
+		 * 那么可以把prev的memblock往上扩展
+		 * 从而分配出空闲页面
+		 */
+		if (((prev->base + prev->size) == mbase) &&
+				prev->flags == MEMBLOCK_RESERVE) {
+			prev->size += size;
+			mrg->base += size;
+			mrg->size -= size;
 
-			mrg->base = mbase + size;
-			mrg->size = mrg->size - size;
-
-			/* insert new node between prev and mrg */
-			memblock_insert_new(prev, new, mrg);
-			memblock.num_regions++;
 			return mbase;
 		}
+
+		new = memblock_init_entity(mbase,
+				size, MEMBLOCK_RESERVE);
+		if (!new)
+			return -EINVAL;
+
+		mrg->base = mbase + size;
+		mrg->size = mrg->size - size;
+
+		/* insert new node between prev and mrg */
+		memblock_insert_new(prev, new, mrg);
+		memblock.num_regions++;
+		return mbase;
 	}
 
 	return -EINVAL;
