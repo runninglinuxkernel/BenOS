@@ -6,11 +6,13 @@
 #include <asm/mm.h>
 #include <asm/barrier.h>
 
+extern char idmap_pg_dir[];
+
 /* 查找PGD索引 */
 #define pgd_index(addr) (((addr) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
 
 /* 通过地址addr查找PGD的表项 */
-#define pgd_offset_raw(pgd, addr) ((pgd) + pgd_index(addr))
+#define pgd_offset_raw(pgd, addr) ((pgd_t *)((pgd) + pgd_index(addr)))
 
 #define pgd_offset(mm, addr) (pgd_offset_raw((mm)->pgd, (addr)))
 
@@ -98,6 +100,5 @@ static inline unsigned long mk_sect_prot(unsigned long prot)
 {
 	return prot & ~PTE_TABLE_BIT;
 }
-
 #endif /*ASM_PGTABLE_H*/
 

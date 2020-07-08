@@ -35,14 +35,8 @@ static void print_mem(void)
 			(u32)(_ebss - _bss));
 }
 
-
-
 void kernel_main(void)
 {
-	uart_init();
-	uart_send_string("=Welcome BenOS!\r\n");
-	uart_send_string("i am benshushu!\r\n");
-
 	setup_arch();
 
 	sched_init();

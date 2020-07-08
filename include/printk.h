@@ -2,6 +2,7 @@
 #define __PRINTK__
 #include <stdarg.h>
 
+void init_printk_done(void);
 int myprintf(char *string, unsigned int size,
 		const char *fmt, va_list arg);
 int printk(char *fmt, ...);

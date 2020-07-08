@@ -1,6 +1,7 @@
 #ifndef ASM_PGTABLE_TYPES_H
 #define ASM_PGTABLE_TYPES_H
 
+#ifndef __ASSEMBLY__
 #include <type.h>
 
 typedef u64 pteval_t;
@@ -32,4 +33,5 @@ typedef struct {
 #define pgd_val(x) ((x).pgd)
 #define __pgd(x) ((pgd_t) { (x) })
 
+#endif
 #endif /*ASM_PGTABLE_TYPES_H*/

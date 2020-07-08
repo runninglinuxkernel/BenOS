@@ -6,6 +6,20 @@
 #define CONSOLE_PRINT_BUFFER_SIZE 1024
 static char print_buf[CONSOLE_PRINT_BUFFER_SIZE];
 
+/* record buffer*/
+#define CONFIG_LOG_BUF_SHIFT 17
+#define LOG_BUF_LEN (1 << CONFIG_LOG_BUF_SHIFT)
+static char log_buf[LOG_BUF_LEN];
+
+enum printk_status {
+	PRINTK_STATUS_DOWN,
+	PRINTK_STATUS_READY,
+};
+
+static enum printk_status g_printk_status = PRINTK_STATUS_DOWN;
+static char *g_record = log_buf;
+static unsigned long g_record_len;
+
 #define ZEROPAD	1		/* pad with zero */
 #define SIGN	2		/* unsigned/signed long */
 #define PLUS	4		/* show plus */
@@ -320,6 +334,19 @@ repeat:
 	return pos - string;
 }
 
+void init_printk_done(void)
+{
+	unsigned long i;
+
+	g_printk_status = PRINTK_STATUS_READY;
+
+	for (i = 0; i < g_record_len; i++)
+		putchar(log_buf[i]);
+
+	g_record = log_buf;
+	g_record_len = 0;
+}
+
 int printk(const char *fmt, ...)
 {
 	va_list arg;
@@ -329,6 +356,16 @@ int printk(const char *fmt, ...)
 	va_start(arg, fmt);
 	len = myprintf(print_buf, sizeof(print_buf), fmt, arg);
 	va_end(arg);
+
+	/* record it into logbuffer*/
+	if (g_printk_status == PRINTK_STATUS_DOWN) {
+		memcpy(g_record, print_buf, len);
+		g_record = log_buf + len;
+		g_record_len += len;
+
+		return 0;
+	}
+
 	for (i = 0; i < len; i++) {
 		putchar(print_buf[i]);
 		if (i > sizeof(print_buf))

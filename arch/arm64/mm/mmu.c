@@ -11,8 +11,6 @@
 #define NO_BLOCK_MAPPINGS BIT(0)
 #define NO_CONT_MAPPINGS BIT(1)
 
-extern char idmap_pg_dir[];
-
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
 extern char _rodata[], _erodata[];
@@ -177,67 +175,8 @@ static void create_mmio_mapping(void)
 			0);
 }
 
-static void cpu_init(void)
-{
-	unsigned long mair = 0;
-	unsigned long tcr = 0;
-	unsigned long tmp;
-	unsigned long parang;
-
-	asm("tlbi vmalle1");
-	dsb(nsh);
-
-	write_sysreg(3UL << 20, cpacr_el1);
-	write_sysreg(1 << 12, mdscr_el1);
-
-	mair = MAIR(0x00UL, MT_DEVICE_nGnRnE) |
-	       MAIR(0x04UL, MT_DEVICE_nGnRE) |
-	       MAIR(0x0cUL, MT_DEVICE_GRE) |
-	       MAIR(0x44UL, MT_NORMAL_NC) |
-	       MAIR(0xffUL, MT_NORMAL) |
-	       MAIR(0xbbUL, MT_NORMAL_WT);
-	write_sysreg(mair, mair_el1);
-
-	tcr = TCR_TxSZ(VA_BITS) | TCR_TG_FLAGS;
-
-	tmp = read_sysreg(ID_AA64MMFR0_EL1);
-	parang = tmp & 0xf;
-	if (parang > ID_AA64MMFR0_PARANGE_48)
-		parang = ID_AA64MMFR0_PARANGE_48;
-
-	tcr |= parang << TCR_IPS_SHIFT;
-
-	write_sysreg(tcr, tcr_el1);
-}
-
-static int enable_mmu(void)
-{
-	//unsigned long sctrl = SCTLR_EL1_SET;
-	unsigned long tmp;
-	int tgran4;
-
-	tmp = read_sysreg(ID_AA64MMFR0_EL1);
-	tgran4 = (tmp >> ID_AA64MMFR0_TGRAN4_SHIFT) & 0xf;
-	if (tgran4 != ID_AA64MMFR0_TGRAN4_SUPPORTED)
-		return -EINVAL;
-
-	write_sysreg(idmap_pg_dir, ttbr0_el1);
-	isb();
-
-	write_sysreg(SCTLR_ELx_M, sctlr_el1);
-	isb();
-	asm("ic iallu");
-	dsb(nsh);
-	isb();
-
-	return 0;
-}
-
 void paging_init(void)
 {
-	memset(idmap_pg_dir, 0, PAGE_SIZE);
 	create_identical_mapping();
 	create_mmio_mapping();
-	cpu_init();
-	enable_mmu();
 }

@@ -33,7 +33,8 @@ SECTIONS
 	}
 	. = ALIGN(PAGE_SIZE);
 	idmap_pg_dir = .;
-	. += PAGE_SIZE;
+	. += 3*PAGE_SIZE;
+	idmap_pg_end = .;
 
 	. = ALIGN(0x8);
 	_edata = .;
@@ -41,7 +42,10 @@ SECTIONS
 	. = ALIGN(PAGE_SIZE);
 	_bss = .;
 	bss_begin = .;
-	.bss : { *(.bss*) }
+	.bss : {
+		*(.bss*)
+		. = ALIGN(PAGE_SIZE);
+	}
 	bss_end = .;
 	_ebss = .;
 	_end = .;
