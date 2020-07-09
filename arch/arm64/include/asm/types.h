@@ -7,4 +7,6 @@
 #define BITS_PER_LONG 32
 #endif /* CONFIG_64BIT */
 
+#define BITS_PER_LONG_LONG 64
+
 #endif /*ASM_TYPES_H*/

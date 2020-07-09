@@ -5,7 +5,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = 0x80000;
+	. = KIMAGE_VADDR + TEXT_OFFSET;
 	_text_boot = .;
 	.text.boot : {
 		*(.text.boot)
@@ -35,6 +35,11 @@ SECTIONS
 	idmap_pg_dir = .;
 	. += 3*PAGE_SIZE;
 	idmap_pg_end = .;
+	init_pg_dir = .;
+	. += 3*PAGE_SIZE;
+	init_pg_end = .;
+	swapper_pg_dir = .;
+	. += PAGE_SIZE;
 
 	. = ALIGN(0x8);
 	_edata = .;
@@ -43,8 +48,9 @@ SECTIONS
 	_bss = .;
 	bss_begin = .;
 	.bss : {
-		*(.bss*)
+		*(.bss)
 		. = ALIGN(PAGE_SIZE);
+		*(.bss.page_aligned)
 	}
 	bss_end = .;
 	_ebss = .;

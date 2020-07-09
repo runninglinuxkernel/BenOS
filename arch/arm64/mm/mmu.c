@@ -7,6 +7,7 @@
 #include <memblock.h>
 #include <printk.h>
 #include <string.h>
+#include <asm/fix_map.h>
 
 #define NO_BLOCK_MAPPINGS BIT(0)
 #define NO_CONT_MAPPINGS BIT(1)
@@ -35,11 +36,13 @@ static void alloc_init_pte(pmd_t *pmdp, unsigned long addr,
 		pmd = *pmdp;
 	}
 
-	ptep = pte_offset_phys(pmdp, addr);
+	ptep = pte_set_fixmap_offset(pmdp, addr);
 	do {
 		set_pte(ptep, pfn_pte(phys >> PAGE_SHIFT, prot));
 		phys += PAGE_SIZE;
 	} while (ptep++, addr += PAGE_SIZE, addr != end);
+
+	pte_clear_fixmap();
 }
 
 void pmd_set_section(pmd_t *pmdp, unsigned long phys,
@@ -70,7 +73,7 @@ static void alloc_init_pmd(pud_t *pudp, unsigned long addr,
 		pud = *pudp;
 	}
 
-	pmdp = pmd_offset_phys(pudp, addr);
+	pmdp = pmd_set_fixmap_offset(pudp, addr);
 	do {
 		next = pmd_addr_end(addr, end);
 
@@ -83,6 +86,8 @@ static void alloc_init_pmd(pud_t *pudp, unsigned long addr,
 
 		phys += next - addr;
 	} while (pmdp++, addr = next, addr != end);
+
+	pmd_clear_fixmap();
 }
 
 static void alloc_init_pud(pgd_t *pgdp, unsigned long addr,
@@ -104,7 +109,7 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr,
 		pgd = *pgdp;
 	}
 
-	pudp = pud_offset_phys(pgdp, addr);
+	pudp = pud_set_fixmap_offset(pgdp, addr);
 	do {
 		next = pud_addr_end(addr, end);
 		alloc_init_pmd(pudp, addr, next, phys,
@@ -112,6 +117,8 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr,
 		phys += next - end;
 
 	} while (pudp++, addr = next, addr != end);
+
+	pud_clear_fixmap();
 }
 
 static void __create_pgd_mapping(pgd_t *pgdir, unsigned long phys,
@@ -137,46 +144,118 @@ static void __create_pgd_mapping(pgd_t *pgdir, unsigned long phys,
 
 static unsigned long early_pgtable_alloc(void)
 {
-	unsigned long phys;
+	void *phys;
+	void *vaddr;
 
-	phys = memblock_alloc(PAGE_SIZE);
-	memset((void *)phys, 0, PAGE_SIZE);
+	phys = memblock_phys_alloc(PAGE_SIZE);
+	vaddr = (void *)early_pg_set_fixmap((unsigned long)phys);
 
-	return phys;
+	memset(vaddr, 0, PAGE_SIZE);
+
+	early_pg_clear_fixmap();
+
+	return (unsigned long)phys;
 }
 
-static void create_identical_mapping(void)
+static void create_kernel_mapping(pgd_t *pgdp)
 {
-	unsigned long start = PAGE_ALIGN((unsigned long)_end);
-	unsigned long end = bootmem_get_end_ddr();
+	unsigned long phy_start, vaddr, size, vend;
 
 	/*map text*/
-	start = (unsigned long)_text_boot;
-	end = (unsigned long)_etext;
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			end - start, PAGE_KERNEL_ROX,
+	vaddr = (unsigned long)_text_boot;
+	vend = (unsigned long)_etext;
+	phy_start = __pa_symbol(vaddr);
+	size = vend - vaddr;
+
+	__create_pgd_mapping(pgdp, phy_start, vaddr,
+			size, PAGE_KERNEL_ROX,
 			early_pgtable_alloc,
 			0);
 
-	/*map memory*/
-	start = PAGE_ALIGN((unsigned long)_etext);
-	end = bootmem_get_end_ddr();
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			end - start, PAGE_KERNEL,
+	/*map ro data*/
+	vaddr = (unsigned long)_rodata;
+	vend = (unsigned long)_erodata;
+	phy_start = __pa_symbol(vaddr);
+	size = vend - vaddr;
+	__create_pgd_mapping(pgdp, phy_start, vaddr,
+			size, PAGE_KERNEL_RO,
+			early_pgtable_alloc,
+			0);
+
+	/*map data*/
+	vaddr = (unsigned long)_data;
+	vend = (unsigned long)_end;
+	phy_start = __pa_symbol(vaddr);
+	size = vend - vaddr;
+	__create_pgd_mapping(pgdp, phy_start, vaddr,
+			size, PAGE_KERNEL,
 			early_pgtable_alloc,
 			0);
 }
 
-static void create_mmio_mapping(void)
+static void create_mem_mapping(pgd_t *pgdp)
 {
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, PBASE, PBASE,
+	unsigned long phy_start, vaddr, size;
+	unsigned long phy_end;
+	unsigned long kernel_start = __pa_symbol(_text_boot);
+	unsigned long kernel_end = __pa_symbol(_erodata);
+
+	/*1. map 0 address to kernel text section*/
+	phy_start = bootmem_get_start_ddr();
+	vaddr = __phys_to_virt(phy_start);
+	size = kernel_start - phy_start;
+	__create_pgd_mapping(pgdp, phy_start, vaddr,
+			size, PAGE_KERNEL,
+			early_pgtable_alloc,
+			0);
+
+	/*2. map kernel text section with RO and no exec*/
+	vaddr = __phys_to_virt(kernel_start);
+	phy_start = kernel_start;
+	size = kernel_end - kernel_start;
+	__create_pgd_mapping(pgdp, phy_start, vaddr,
+			size, PAGE_KERNEL_RO,
+			early_pgtable_alloc,
+			0);
+
+	/*3. map other memory*/
+	phy_end = bootmem_get_end_ddr();
+	phy_start = kernel_end;
+	size = phy_end - phy_start;
+	vaddr = __phys_to_virt(phy_start);
+	__create_pgd_mapping(pgdp, phy_start, vaddr,
+			size, PAGE_KERNEL,
+			early_pgtable_alloc,
+			0);
+}
+
+static void create_mmio_mapping(pgd_t *pgdp)
+{
+	__create_pgd_mapping(pgdp, PBASE, VA_START + PBASE,
 			DEVICE_SIZE, PROT_DEVICE_nGnRnE,
 			early_pgtable_alloc,
 			0);
 }
 
+static void map_kernel_mem(pgd_t *pgdp)
+{
+	create_kernel_mapping(pgdp);
+	create_mem_mapping(pgdp);
+}
+
+static void map_mmio(pgd_t *pgdp)
+{
+	create_mmio_mapping(pgdp);
+}
+
 void paging_init(void)
 {
-	create_identical_mapping();
-	create_mmio_mapping();
+	fix_map_init();
+
+	pgd_t *pgdp = pgd_set_fixmap(__pa_symbol(init_pg_dir));
+
+	map_kernel_mem(pgdp);
+	map_mmio(pgdp);
+
+	pgd_clear_fixmap();
 }

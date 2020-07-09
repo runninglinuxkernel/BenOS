@@ -48,7 +48,7 @@ static int alloc_node_mem_map(struct pg_data *pgdat)
 		end = pgdat->node_start_pfn + pgdat->node_spanned_pages;
 		end = ALIGN(end, MAX_ORDER_NR_PAGES);
 		size =  (end - start) * sizeof(struct page);
-		map = (struct page *)memblock_alloc(size);
+		map = (struct page *)memblock_virt_alloc(size);
 		if (!map)
 			return -EINVAL;
 
@@ -278,16 +278,12 @@ struct page *alloc_pages(unsigned int order)
 unsigned long get_free_pages(unsigned int order)
 {
 	struct page *page;
-	unsigned long addr;
 
 	page = alloc_pages(order);
 	if (!page)
 		return 0;
 
-	addr = page_to_addr(page);
-	//printk("%s: 0x%lx\n", __func__, addr);
-
-	return addr;
+	return (unsigned long)page_to_address(page);
 }
 
 unsigned long get_free_page(void)
@@ -299,7 +295,7 @@ void free_pages(unsigned long addr, unsigned int order)
 {
 	struct page *page;
 
-	page = addr_to_page(addr);
+	page = virt_to_page(addr);
 
 	__free_pages(page, order);
 }

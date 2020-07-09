@@ -29,6 +29,7 @@ void memblock_init(void)
 	unsigned long free;
 	unsigned long kernel_size;
 	unsigned long start_mem, end_mem;
+	unsigned long kernel_start, kernel_end;
 
 	start_mem = bootmem_get_start_ddr();
 	end_mem = bootmem_get_end_ddr();
@@ -37,15 +38,18 @@ void memblock_init(void)
 	end_mem &= PAGE_MASK;
 	free = end_mem - start_mem;
 
+	kernel_start = __pa_symbol((unsigned long)_text_boot);
+	kernel_end = __pa_symbol((unsigned long)_end);
+
 	memblock_add_region(start_mem, end_mem);
 
-	kernel_size = _end - _text_boot;
+	kernel_size = kernel_end - kernel_start;
 
 	printk("%s: kernel image: 0x%x - 0x%x, %d\n",
-			__func__, (unsigned long)_text_boot,
-			(unsigned long)_end, kernel_size);
+			__func__, kernel_start,
+			kernel_end, kernel_size);
 
-	memblock_reserve((unsigned long)_text_boot, kernel_size);
+	memblock_reserve(kernel_start, kernel_size);
 
 	free -= kernel_size;
 

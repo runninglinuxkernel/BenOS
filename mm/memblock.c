@@ -159,19 +159,20 @@ found_tail:
 	return 0;
 }
 
-unsigned long memblock_alloc(unsigned long size)
+static void *memblock_alloc(unsigned long size)
 {
 	unsigned long alloc_start;
 	struct memblock_region *mrg, *prev;
 	unsigned long mbase, mend;
 	struct memblock_region *new;
+	unsigned long kernel_end = __pa_symbol((unsigned long)_end);
 
 	size = PAGE_ALIGN_UP(size);
 
 	/*
 	 * 从内核image结束的地方开始查找空闲内存
 	 */
-	alloc_start = PAGE_ALIGN((unsigned long)_end);
+	alloc_start = PAGE_ALIGN(kernel_end);
 
 	for_each_memblock_region(mrg) {
 		mbase = mrg->base;
@@ -199,13 +200,13 @@ unsigned long memblock_alloc(unsigned long size)
 			mrg->base += size;
 			mrg->size -= size;
 
-			return mbase;
+			return (void *)mbase;
 		}
 
 		new = memblock_init_entity(mbase,
 				size, MEMBLOCK_RESERVE);
 		if (!new)
-			return -EINVAL;
+			return NULL;
 
 		mrg->base = mbase + size;
 		mrg->size = mrg->size - size;
@@ -213,10 +214,24 @@ unsigned long memblock_alloc(unsigned long size)
 		/* insert new node between prev and mrg */
 		memblock_insert_new(prev, new, mrg);
 		memblock.num_regions++;
-		return mbase;
+		return NULL;
 	}
 
-	return -EINVAL;
+	return NULL;
+}
+
+void *memblock_phys_alloc(unsigned long size)
+{
+	return memblock_alloc(size);
+}
+
+void *memblock_virt_alloc(unsigned long size)
+{
+	void *phys;
+
+	phys = memblock_phys_alloc(size);
+
+	return __va((unsigned long)phys);
 }
 
 int memblock_reserve(unsigned long base, unsigned long size)

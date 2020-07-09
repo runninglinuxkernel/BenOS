@@ -16,8 +16,8 @@ extern struct page *mem_map;
 
 #define page_to_nid(page) (page->nid)
 
-#define page_to_addr(page) (page_to_pfn(page) << PAGE_SHIFT)
-#define addr_to_page(addr)  (pfn_to_page(addr >> PAGE_SHIFT))
+#define page_to_address(page) __va(page_to_pfn(page) << PAGE_SHIFT)
+#define virt_to_page(addr)  (pfn_to_page(__pa(addr) >> PAGE_SHIFT))
 
 #define PFN_UP(x) (((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
 #define PFN_DOWN(x)  (x >> PAGE_SHIFT)

@@ -28,7 +28,7 @@ proc_hang:
 master:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
         /* init uart and print the string*/
-	bl __init_uart
+	//bl __init_uart
 #endif
 
 	mrs x5, CurrentEL
@@ -38,7 +38,7 @@ master:
 
 el3_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	bl print_el
+	//bl print_el
 #endif
 	ldr x0, =SCTLR_EL2_VALUE_MMU_DISABLED
 	msr sctlr_el2, x0
@@ -59,7 +59,7 @@ el3_entry:
 
 el2_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	bl print_el
+	//bl print_el
 #endif
 	ldr x0, =SCTLR_EL2_VALUE_MMU_DISABLED
 	msr sctlr_el2, x0
@@ -87,7 +87,7 @@ el2_entry:
 
 el1_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	bl print_el
+	//bl print_el
 #endif
 	/* 设置异常向量表基地址到vbar寄存器 */
 	ldr     x5, =vectors
@@ -106,7 +106,8 @@ el1_entry:
 	adrp x2, init_task_union
 	add  sp, x2, #THREAD_SIZE
 
-	bl kernel_main
+	ldr x2, =kernel_main
+	br x2
 	b proc_hang // should never come here
 
 enable_mmu:
@@ -126,14 +127,16 @@ enable_mmu:
 
 	ldr x3, =SCTLR_ELx_M
 
-	adrp	x0, idmap_pg_dir
+	adrp x0, idmap_pg_dir
+	adrp x1, init_pg_dir
 	msr ttbr0_el1, x0
+	msr ttbr1_el1, x1
 	isb
 	msr sctlr_el1, x3
 	isb
 
-	ic	iallu
-	dsb	nsh
+	ic iallu
+	dsb nsh
 	isb
 	ret
 
@@ -156,6 +159,24 @@ create_page_table:
 	and x3, x3, SECTION_MASK
 	mov x4, SWAPPER_MM_MMUFLAGS
 	adrp  x0, idmap_pg_dir
+
+	bl __create_section_mapping
+
+	/*1. map kernel image to high address*/
+	adrp  x0, init_pg_dir
+	adrp  x1, init_pg_end
+	sub x1, x1, x0
+	bl memzero
+
+	adrp x1, _text_boot
+	and x1, x1, SECTION_MASK
+	ldr x2, =_text_boot
+	ldr x3, =_end
+	add x3, x3, #SECTION_SIZE
+	sub x3, x3, #1
+	and x3, x3, SECTION_MASK
+	mov x4, SWAPPER_MM_MMUFLAGS
+	adrp  x0, init_pg_dir
 
 	bl __create_section_mapping
 
@@ -209,6 +230,12 @@ __create_section_mapping:
 	b.hi 1b
 
 	mov x30, x12
+	ret
+
+.globl idmap_replace_ttbr1
+idmap_replace_ttbr1:
+	msr     ttbr1_el1, x0
+	isb
 	ret
 
 print_el:

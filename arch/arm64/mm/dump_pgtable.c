@@ -26,6 +26,8 @@ struct pg_level {
 
 static const struct addr_marker address_markers[] = {
 	{ 0, "Identical mapping" },
+	{VA_START, "kernel image mapping"},
+	{ PAGE_OFFSET, "Linear mapping" },
 };
 
 static const struct prot_bits pte_bits[] = {
@@ -177,7 +179,7 @@ static int print_pgtable(unsigned long start, unsigned long end,
 
 static void walk_pte(pmd_t *pmdp, unsigned long start, unsigned long end)
 {
-	pte_t *ptep = pte_offset_phys(pmdp, start);
+	pte_t *ptep = pte_offset_virt(pmdp, start);
 	unsigned long addr = start;
 
 	do {
@@ -188,7 +190,7 @@ static void walk_pte(pmd_t *pmdp, unsigned long start, unsigned long end)
 static void walk_pmd(pud_t *pudp, unsigned long start, unsigned long end)
 {
 	unsigned long next, addr = start;
-	pmd_t *pmdp = pmd_offset_phys(pudp, start);
+	pmd_t *pmdp = pmd_offset_virt(pudp, start);
 	pmd_t pmd;
 
 	do {
@@ -205,12 +207,12 @@ static void walk_pmd(pud_t *pudp, unsigned long start, unsigned long end)
 static void walk_pud(pgd_t *pgdp, unsigned long start, unsigned long end)
 {
 	unsigned long next, addr = start;
-	pud_t *pudp = pud_offset_phys(pgdp, start);
+	pud_t *pudp = pud_offset_virt(pgdp, start);
 	pud_t pud;
 
 	do {
 		pud = *pudp;
-		next = pud_addr_end(start, end);
+		next = pud_addr_end(addr, end);
 
 		if (pud_none(pud) || pud_sect(pud))
 			print_pgtable(addr, next, 2, pud_val(pud));
@@ -220,9 +222,9 @@ static void walk_pud(pgd_t *pgdp, unsigned long start, unsigned long end)
 	} while (pudp++, addr = next, addr != end);
 }
 
-static void walk_pgd(pgd_t *pgd, unsigned long start, unsigned long size)
+static void walk_pgd(pgd_t *pgd, unsigned long start)
 {
-	unsigned long end = start + size;
+	unsigned long end = 0;
 	unsigned long next, addr = start;
 	pgd_t *pgdp;
 	pgd_t pgd_entry;
@@ -253,5 +255,5 @@ static void pg_level_init(void)
 void dump_pgtable(void)
 {
 	pg_level_init();
-	walk_pgd((pgd_t *)idmap_pg_dir, 0, TOTAL_MEMORY);
+	walk_pgd((pgd_t *)init_pg_dir, VA_START);
 }

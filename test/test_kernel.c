@@ -169,7 +169,7 @@ static int test_lab08(void)
 
 int memblock_test(void)
 {
-	unsigned long addr;
+	void *addr;
 
 	memblock_add_region(0, 0x10000000);
 
@@ -178,8 +178,8 @@ int memblock_test(void)
 	memblock_dump_region();
 
 	printk("alloc buffer size: 0x200000\n");
-	addr = memblock_alloc(0x200000);
-	printk("allocated addr: 0x%lx\n", addr);
+	addr = memblock_phys_alloc(0x200000);
+	printk("allocated addr: 0x%lx\n", (unsigned long)addr);
 	memblock_dump_region();
 
 

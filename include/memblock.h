@@ -27,8 +27,9 @@ struct memblock {
 	for (mrg = memblock.head.next; mrg; mrg = mrg->next)
 
 int memblock_add_region(unsigned long base, unsigned long size);
-unsigned long memblock_alloc(unsigned long size);
 int memblock_reserve(unsigned long base, unsigned long size);
 void memblock_dump_region(void);
+void *memblock_phys_alloc(unsigned long size);
+void *memblock_virt_alloc(unsigned long size);
 
 #endif /*MEMBLOCK_H*/

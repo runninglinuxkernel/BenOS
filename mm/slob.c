@@ -139,7 +139,7 @@ void slob_free(void *block, int size)
 	slobidx_t object_size;
 	slobidx_t free_size;
 
-	page = addr_to_page((unsigned long)block);
+	page = virt_to_page((unsigned long)block);
 
 	object_size = free_size = SLOB_UNITS(size);
 
@@ -220,7 +220,7 @@ void *slob_alloc(size_t size, int align)
 		b = slob_alloc_new_page(0);
 		if (!b)
 			return NULL;
-		page = addr_to_page((unsigned long)b);
+		page = virt_to_page((unsigned long)b);
 		SetPageSlab(page);
 
 		page->slob_left_units = SLOB_UNITS(PAGE_SIZE);
@@ -277,7 +277,7 @@ void *kmalloc(size_t size)
 
 		ret = slob_alloc_new_page(order);
 		memset(ret, 0, size);
-		page = addr_to_page((unsigned long)ret);
+		page = virt_to_page((unsigned long)ret);
 		page->slob_left_units = order;
 	}
 
@@ -291,7 +291,7 @@ void kfree(const void *block)
 {
 	struct page *page;
 
-	page = addr_to_page((unsigned long)block);
+	page = virt_to_page((unsigned long)block);
 	if (PageSlab(page)) {
 		int align = sizeof(unsigned long long);
 		unsigned int *m = (unsigned int *)(block - align);

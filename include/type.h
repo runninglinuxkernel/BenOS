@@ -3,10 +3,20 @@
 
 #include <errorno.h>
 
-#define SZ_1K				0x00000400
-#define SZ_4K				0x00001000
-#define SZ_1M				0x00100000
-#define SZ_1G				0x40000000
+#define SZ_1K	0x00000400
+#define SZ_4K	0x00001000
+#define SZ_1M	0x00100000
+#define SZ_1G	0x40000000
+
+#define SZ_2M	0x00200000
+#define SZ_4M	0x00400000
+#define SZ_8M	0x00800000
+#define SZ_16M	0x01000000
+#define SZ_32M	0x02000000
+#define SZ_64M	0x04000000
+#define SZ_128M	0x08000000
+#define SZ_256M	0x10000000
+#define SZ_512M	0x20000000
 
 #define NULL ((void *)0)
 
@@ -19,20 +29,24 @@
 #define _AT(T,X)	((T)(X))
 #endif
 
-#define UL(x)		(_UL(x))
-#define ULL(x)		(_ULL(x))
-
 #define _UL(x)		(_AC(x, UL))
 #define _ULL(x)		(_AC(x, ULL))
 
-#define BIT(nr)		(1UL << (nr))
+#define UL(x)		(_UL(x))
+#define ULL(x)		(_ULL(x))
+
+#define BIT(nr)		(_UL(1) << (nr))
 #define _BITUL(x)	(_UL(1) << (x))
 #define _BITULL(x)	(_ULL(1) << (x))
 
+#define GENMASK_ULL(h, l) \
+	(((~0ULL) - (1ULL << (l)) + 1) & \
+	 (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
+
+#ifndef __ASSEMBLY__
 #define __ALIGN_MASK(x, mask)	(((x) + (mask)) & ~(mask))
 #define ALIGN(x, a) __ALIGN_MASK(x, (typeof(x))(a) - 1)
 
-#ifndef __ASSEMBLY__
 typedef char s8;
 typedef unsigned char u8;
 
