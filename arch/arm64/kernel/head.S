@@ -28,7 +28,7 @@ proc_hang:
 master:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
         /* init uart and print the string*/
-	//bl __init_uart
+	bl __init_uart
 #endif
 
 	mrs x5, CurrentEL
@@ -38,7 +38,7 @@ master:
 
 el3_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	//bl print_el
+	bl print_el
 #endif
 	ldr x0, =SCTLR_EL2_VALUE_MMU_DISABLED
 	msr sctlr_el2, x0
@@ -59,7 +59,7 @@ el3_entry:
 
 el2_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	//bl print_el
+	bl print_el
 #endif
 	ldr x0, =SCTLR_EL2_VALUE_MMU_DISABLED
 	msr sctlr_el2, x0
@@ -87,7 +87,7 @@ el2_entry:
 
 el1_entry:
 #ifdef CONFIG_DEBUG_ON_EARLY_ASM
-	//bl print_el
+	bl print_el
 #endif
 	/* 设置异常向量表基地址到vbar寄存器 */
 	ldr     x5, =vectors
@@ -309,8 +309,12 @@ idmap_replace_ttbr1:
 print_el:
 	mov x10, x30
 
-	/* print EL */
-	ldr x0, =string1
+	/*
+	   print EL
+	   这里使用adrp指令来加载string1的物理地址
+	   ldr会加载string1的链接地址
+	 */
+	adrp x0, string1
 	bl put_string_uart
 
 	mrs x5, CurrentEL
