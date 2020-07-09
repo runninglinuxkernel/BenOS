@@ -220,11 +220,22 @@ static void *memblock_alloc(unsigned long size)
 	return NULL;
 }
 
+/*
+ * memblock_phys_alloc - 返回物理地址
+ *
+ * 用于线性映射还没建立的场景
+ */
 void *memblock_phys_alloc(unsigned long size)
 {
 	return memblock_alloc(size);
 }
 
+/*
+ * memblock_virt_alloc - 返回线性映射的
+ * 虚拟地址
+ *
+ * 用于线性映射已经建立完成的内存分配
+ */
 void *memblock_virt_alloc(unsigned long size)
 {
 	void *phys;

@@ -99,13 +99,25 @@ el1_entry:
 	sub x1, x1, x0
 	bl memzero
 
+	/* 创建页表 */
 	bl create_page_table
+	/* 打开MMU*/
 	bl enable_mmu
 
 	/* set sp to top of init_task_union */
+	/*
+	   这里要用adrp来获取init_task_union的物理地址，
+	   不能使用ldr来获取init_task_union的链接地址
+	   因为这时 CPU还运行在 VA=PA
+	 */
 	adrp x2, init_task_union
 	add  sp, x2, #THREAD_SIZE
 
+	/*
+	   ldr加载C语言入口函数kernel_main的链接地址
+	   然后使用br指令来跳转
+	   从而实现 重定位功能
+	 */
 	ldr x2, =kernel_main
 	br x2
 	b proc_hang // should never come here
@@ -114,6 +126,10 @@ enable_mmu:
 	tlbi	vmalle1	// Invalidate local TLB
 	dsb	nsh
 
+	/*
+	  设置MAIR寄存器，用来配置内存属性
+	  在页表项中用来设置内存属性
+	 */
 	ldr	x5, =MAIR(0x00, MT_DEVICE_nGnRnE) | \
 		     MAIR(0x04, MT_DEVICE_nGnRE) | \
 		     MAIR(0x0c, MT_DEVICE_GRE) | \
@@ -122,19 +138,38 @@ enable_mmu:
 		     MAIR(0xbb, MT_NORMAL_WT)
 	msr	mair_el1, x5
 
+	/*
+	   这种TCR寄存器，主要设置
+	   1. T0SZ： TTBR0页表的管辖大小
+	   2. T1SZ： TTBR1页表管辖大小
+	   3. TCR_TG0_4K： TTBR0的页表粒度为4KB
+	   4. TCR_TG1_4K： TTBR1的页表粒度为4KB
+	 */
 	ldr	x10, =TCR_TxSZ(VA_BITS) | TCR_TG_FLAGS
 	msr	tcr_el1, x10
 
 	ldr x3, =SCTLR_ELx_M
 
+	/*
+	   加载两个页表的物理地址
+	   恒等映射页表： idmap_pg_dir
+	   内核空间映射页表： init_pg_dir
+	 */
 	adrp x0, idmap_pg_dir
 	adrp x1, init_pg_dir
 	msr ttbr0_el1, x0
 	msr ttbr1_el1, x1
 	isb
+
+	/*
+	   打开MMU
+	 */
 	msr sctlr_el1, x3
 	isb
 
+	/*
+	   无效所有的指令高速缓存
+	 */
 	ic iallu
 	dsb nsh
 	isb
@@ -143,7 +178,11 @@ enable_mmu:
 create_page_table:
 	mov x25, x30
 
-	/*1. create identical mapping*/
+	/*1. create identical mapping
+
+	  创建恒等映射，即虚拟地址等于物理地址
+	  这里把内核image都建立恒等映射
+	 */
 	adrp  x0, idmap_pg_dir
 	adrp  x1, idmap_pg_end
 	sub x1, x1, x0
@@ -162,14 +201,21 @@ create_page_table:
 
 	bl __create_section_mapping
 
-	/*1. map kernel image to high address*/
+	/*2. map to link addr
+
+	  把内核image映射到链接地址
+	  链接地址为0xffff000010080000
+	  在跳转到C语言之前需要把重定位到链接地址
+	 */
 	adrp  x0, init_pg_dir
 	adrp  x1, init_pg_end
 	sub x1, x1, x0
 	bl memzero
 
+	/* adrp得到了_text_boot的物理地址*/
 	adrp x1, _text_boot
 	and x1, x1, SECTION_MASK
+	/* ldr加载了_text_boot的链接地址*/
 	ldr x2, =_text_boot
 	ldr x3, =_end
 	add x3, x3, #SECTION_SIZE
@@ -184,6 +230,8 @@ create_page_table:
 	ret
 
 /*
+   创建段映射的页表（2MB大小的section）
+
    x0: page table base address
    x1: phys address
    x2: virt start address
@@ -193,28 +241,48 @@ create_page_table:
 __create_section_mapping:
 	mov x12, x30
 
-	/* 1. find pgd entry, x8: pgd index */
+	/*
+	   第一步： 根据vaddr来找pgd索引，vaddr >> 39
+	   结果保存到x8寄存器
+	 */
 	lsr x8, x2, #PGDIR_SHIFT
 	and x8, x8, #PTRS_PER_PGD - 1
 
-	/*2. fill pgd entry, x9: pud base address*/
+	/*
+	   第二步： 把pud页表基地址来做成一个pgd页表项
+	   填充到刚才找到的pgd表项中
+
+	   x0指向： pgd页表的基地址
+	   x0+PAGE_SIZE： 指向PUD页表的基地址
+	   x0+2*PAGE_SIZE: 指向PMD页表的基地址
+	 */
 	add x9, x0, #PAGE_SIZE
 	orr x9, x9, #PUD_TYPE_TABLE
 	str x9, [x0, x8, lsl #3] // fill pgd entry
 
 	add x0, x0, #PAGE_SIZE
 
-	/*3. find pud entry: x8: pud index */
+	/*
+	   第三步： 根据需要vaddr来找pud索引，vaddr >> 30
+	 */
 	lsr x8, x2, #PUD_SHIFT
 	and x8, x8, #PTRS_PER_PUD - 1
 
-	/*4. fill pmd entry, x9: pmd base address*/
+	/*
+	   第4步： 把pud页表基地址来做成一个pud页表项
+	   填充到刚才找到的pud表项中
+	 */
 	add x9, x0, #PAGE_SIZE
 	orr x9, x9, #PUD_TYPE_TABLE
 	str x9, [x0, x8, lsl #3] // fill pud entry
 	add x0, x0, #PAGE_SIZE
 
-	/*5. find pmd entry*/
+	/*
+	   第5步：
+	   根据vaddr来找到pmd索引，然后找到pmd表项
+	   由物理地址来构建一个pmd页表项
+	   然后填充到pmd表项里
+	 */
 1:
 	lsr x8, x2, #PMD_SHIFT
 	and x8, x8, #PTRS_PER_PMD - 1

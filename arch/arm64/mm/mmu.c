@@ -109,6 +109,13 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr,
 		pgd = *pgdp;
 	}
 
+	/*
+	 * 这里利用pud_set_fixmap_offset()来查找pudp的虚拟地址，
+	 * 返回的是经过fixmap映射后的虚拟地址
+	 *
+	 * 注意： 此时，CPU的MMU打开，但是线性映射没有建立
+	 * 只能通过fixmap来映射
+	 */
 	pudp = pud_set_fixmap_offset(pgdp, addr);
 	do {
 		next = pud_addr_end(addr, end);
@@ -118,6 +125,7 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr,
 
 	} while (pudp++, addr = next, addr != end);
 
+	/* 断开这个fixmap映射*/
 	pud_clear_fixmap();
 }
 
@@ -148,22 +156,43 @@ static unsigned long early_pgtable_alloc(void)
 	void *vaddr;
 
 	phys = memblock_phys_alloc(PAGE_SIZE);
+	/*
+	 * 利用fixmap机制来建立映射，以便CPU能访问
+	 * 并且memset()把内容清0
+	 *
+	 * 这里分配的内存用于页表本身，不清0会导致
+	 * 访问页表错乱
+	 */
 	vaddr = (void *)early_pg_set_fixmap((unsigned long)phys);
-
 	memset(vaddr, 0, PAGE_SIZE);
 
+	/*断开映射*/
 	early_pg_clear_fixmap();
 
+	/* 返回物理地址 */
 	return (unsigned long)phys;
 }
 
+/*
+ * 这里重新建立映射
+ * 把内核image映射到链接地址
+ * 链接地址为0xffff000010080000
+ *
+ * 在汇编建立的映射是段（section）映射，粒度有点粗，
+ * 现在按照page重新建立映射，因为text段，data段的
+ * 映射属性是不一样的。 section映射的没法区分，必须
+ * 以page映射来映射才能区分text段和data段的映射
+ * 属性。
+ */
 static void create_kernel_mapping(pgd_t *pgdp)
 {
 	unsigned long phy_start, vaddr, size, vend;
 
-	/*map text*/
+	/*1. map text*/
+	/* _text_boot为内核符号，这里为链接地址，虚拟地址*/
 	vaddr = (unsigned long)_text_boot;
 	vend = (unsigned long)_etext;
+	/* 通过__pa_symbol宏把内核符号转换成物理地址 */
 	phy_start = __pa_symbol(vaddr);
 	size = vend - vaddr;
 
@@ -172,7 +201,7 @@ static void create_kernel_mapping(pgd_t *pgdp)
 			early_pgtable_alloc,
 			0);
 
-	/*map ro data*/
+	/*2. map ro data*/
 	vaddr = (unsigned long)_rodata;
 	vend = (unsigned long)_erodata;
 	phy_start = __pa_symbol(vaddr);
@@ -182,7 +211,7 @@ static void create_kernel_mapping(pgd_t *pgdp)
 			early_pgtable_alloc,
 			0);
 
-	/*map data*/
+	/*3. map data*/
 	vaddr = (unsigned long)_data;
 	vend = (unsigned long)_end;
 	phy_start = __pa_symbol(vaddr);
@@ -193,6 +222,12 @@ static void create_kernel_mapping(pgd_t *pgdp)
 			0);
 }
 
+/*
+ * create_mem_mapping - 建立线性映射
+ *
+ * 把所有物理内存都线性映射到0xffff800000000000
+ * 包括kernel image和普通内存
+ */
 static void create_mem_mapping(pgd_t *pgdp)
 {
 	unsigned long phy_start, vaddr, size;
@@ -200,7 +235,9 @@ static void create_mem_mapping(pgd_t *pgdp)
 	unsigned long kernel_start = __pa_symbol(_text_boot);
 	unsigned long kernel_end = __pa_symbol(_erodata);
 
-	/*1. map 0 address to kernel text section*/
+	/*
+	 * 1. map 0 address to kernel text section
+	 */
 	phy_start = bootmem_get_start_ddr();
 	vaddr = __phys_to_virt(phy_start);
 	size = kernel_start - phy_start;
@@ -209,7 +246,12 @@ static void create_mem_mapping(pgd_t *pgdp)
 			early_pgtable_alloc,
 			0);
 
-	/*2. map kernel text section with RO and no exec*/
+	/*
+	 * 2. map kernel text section with RO and no exec
+	 * 注意这里是映射内核image到PAGE_OFFSET
+	 * 这里要映射成只读和不能执行，
+	 * 一般情况不会运行这个地址区间，否则说明程序跑飞
+	 */
 	vaddr = __phys_to_virt(kernel_start);
 	phy_start = kernel_start;
 	size = kernel_end - kernel_start;
@@ -218,7 +260,9 @@ static void create_mem_mapping(pgd_t *pgdp)
 			early_pgtable_alloc,
 			0);
 
-	/*3. map other memory*/
+	/*
+	 * 3. map other memory
+	 */
 	phy_end = bootmem_get_end_ddr();
 	phy_start = kernel_end;
 	size = phy_end - phy_start;
@@ -229,6 +273,9 @@ static void create_mem_mapping(pgd_t *pgdp)
 			0);
 }
 
+/*
+ * create_mmio_mapping - 设备MMIO映射
+ */
 static void create_mmio_mapping(pgd_t *pgdp)
 {
 	__create_pgd_mapping(pgdp, PBASE, VA_START + PBASE,
@@ -252,10 +299,17 @@ void paging_init(void)
 {
 	fix_map_init();
 
+	/*
+	 * 利用fixmap机制把init_pg_dir页表的基地址
+	 * 重新建立映射，得到虚拟地址
+	 */
 	pgd_t *pgdp = pgd_set_fixmap(__pa_symbol(init_pg_dir));
 
 	map_kernel_mem(pgdp);
 	map_mmio(pgdp);
 
+	/*
+	 * 断开刚才创建的fixmap映射
+	 */
 	pgd_clear_fixmap();
 }

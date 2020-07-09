@@ -24,20 +24,42 @@
 #define VA_BITS	 (CONFIG_ARM64_VA_BITS)
 
 /* Memory layout */
+
+/* 内核空间起始地址: 0xffff_0000_0000_0000*/
 #define VA_START (UL(0xffffffffffffffff) - \
 	(UL(1) << VA_BITS) + 1)
+
+/* 线性映射地址: 0xffff_8000_0000_0000*/
 #define PAGE_OFFSET (UL(0xffffffffffffffff) - \
 	(UL(1) << (VA_BITS - 1)) + 1)
+
+/* 内核image链接起始地址 */
 #define KIMAGE_VADDR	(VA_START + 0x10000000)
 #define TEXT_OFFSET 0x80000
+
+/* fixmap区间虚拟地址*/
 #define FIXADDR_TOP (PAGE_OFFSET - SZ_16M)
 
 #define PHYS_OFFSET ARCH_PHYS_OFFSET
 
+/*
+ * 线性映射的虚拟地址 -> 物理地址
+ *
+ * 线性地址 减去 PAGE_OFFSET 得到物理地址
+ */
 #define __linear_to_phys(addr) (((unsigned long)(addr) & ~PAGE_OFFSET) \
 					+ PHYS_OFFSET)
+
+/* 内核符号链接地址（虚拟地址） -> 物理地址
+ *
+ * 链接地址减去 KIMAGE_VADDR 就得到物理地址
+ */
 #define __kimg_to_phys(addr)	(((unsigned long)(addr)) - KIMAGE_VADDR)
 
+/*
+ * 根据虚拟地址来判断:
+ * 是线性映射虚拟地址 还是 内核符号链接地址（虚拟地址）
+ */
 #define __is_linear_address(addr)	(!!((addr) & BIT(VA_BITS - 1)))
 
 #define __pa(x)  ({\
