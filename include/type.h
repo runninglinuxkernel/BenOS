@@ -44,6 +44,10 @@
 	 (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
 
 #ifndef __ASSEMBLY__
+#define BIT_ULL(nr)	(1ULL << (nr))
+#define BIT_MASK(nr)	(1UL << ((nr) % BITS_PER_LONG))
+#define BIT_WORD(nr)	((nr) / BITS_PER_LONG)
+
 #define __ALIGN_MASK(x, mask)	(((x) + (mask)) & ~(mask))
 #define ALIGN(x, a) __ALIGN_MASK(x, (typeof(x))(a) - 1)
 
@@ -63,6 +67,14 @@ typedef unsigned long long u64;
 #define _SIZE_T
 typedef unsigned int size_t;
 #endif
+
+typedef struct {
+	int counter;
+} atomic_t;
+
+typedef struct {
+	long counter;
+} atomic64_t;
 
 #define offsetof(TYPE, MEMBER)	((long)&((TYPE *)0)->MEMBER)
 
