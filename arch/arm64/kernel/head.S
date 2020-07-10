@@ -144,11 +144,23 @@ enable_mmu:
 	   2. T1SZ： TTBR1页表管辖大小
 	   3. TCR_TG0_4K： TTBR0的页表粒度为4KB
 	   4. TCR_TG1_4K： TTBR1的页表粒度为4KB
+	   5. TCR_SH0_INNER/TCR_SH1_INNER: 设置为inner share类型
+	   6. TCR_IRGN_WBWA: 设置cache为Write-Back
+	   	Write-Allocate Cacheable
 	 */
-	ldr	x10, =TCR_TxSZ(VA_BITS) | TCR_TG_FLAGS
+	ldr	x10, =TCR_TxSZ(VA_BITS) | TCR_TG_FLAGS | \
+				TCR_SHARED | TCR_CACHE_FLAGS
 	msr	tcr_el1, x10
 
-	ldr x3, =SCTLR_ELx_M
+	/*
+	   SCTLR_ELx_M: 打开MMU
+	   SCTLR_ELx_C: 打开全局的data cache功能
+	   SCTLR_ELx_I: 打开全局的指令cache功能
+
+	   不打开cache，ldxr指令访问noncache的地址会触发
+	   Dabort异常
+	 */
+	ldr x3, =SCTLR_ELx_M | SCTLR_ELx_C | SCTLR_ELx_I
 
 	/*
 	   加载两个页表的物理地址
