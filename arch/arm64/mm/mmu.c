@@ -109,7 +109,7 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr,
 		next = pud_addr_end(addr, end);
 		alloc_init_pmd(pudp, addr, next, phys,
 				prot, alloc_pgtable, flags);
-		phys += next - end;
+		phys += next - addr;
 
 	} while (pudp++, addr = next, addr != end);
 }
